@@ -17,8 +17,6 @@
 #include <map>
 #include <SDL2/SDL.h>
 #include "platform_gl.hpp"
-#include <SDL2/SDL_opengl.h>
-
 
 #define AUX_MOUSESTATUS		3
 
@@ -54,8 +52,6 @@ private:
     //Use shared_ptr to manage handle lifetimes
     std::shared_ptr<_SdlHandle> _handle;
 
-    bool running;
-    
     Delegate onIdle;
     Delegate onExpose;
     WindowDelegate onReshape;
@@ -66,7 +62,8 @@ private:
 
     SDL_Keycode curr;
     bool keyDown;
-   
+  
+    bool running;
     bool requiresExpose;
     //internal event handlers
     void windowEvent(SDL_WindowEvent& ew);
@@ -74,6 +71,8 @@ private:
     void mouseEventDown(SDL_MouseButtonEvent& eb);
     void mouseEventUp(SDL_MouseButtonEvent& eb);
     void keyEvent(SDL_Keysym& ks);
+
+    bool mainIter();
 public:
     SdlWindow(const char * title, int w, int h);
     ~SdlWindow();

@@ -21,7 +21,7 @@ using namespace std;
 #include "aux_vis.hpp"
 #include "material.hpp"
 
-#include "gl2ps.h"
+//#include "gl2ps.h"
 
 const char *strings_off_on[] = { "off", "on" };
 

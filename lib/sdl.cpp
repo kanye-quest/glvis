@@ -11,7 +11,6 @@
 
 #include <SDL2/SDL.h>
 #include "platform_gl.hpp"
-#include <SDL2/SDL_opengl.h>
 #include <iostream>
 #include "sdl.hpp"
 
@@ -67,11 +66,12 @@ bool SdlWindow::createGlContext() {
         SDL_GL_DeleteContext(_handle->gl_ctx);
         _handle->gl_ctx = 0;
     }
+#ifndef __EMSCRIPTEN__
     // on OSX systems, only core profiles are available for OpenGL 3+, which
     // removes the fixed-function pipeline
     SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2);
     SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1);
-    
+#endif
     // technically, SDL already defaults to double buffering and a depth buffer
     // all we need is an alpha channel
 
@@ -190,44 +190,58 @@ void SdlWindow::keyEvent(SDL_Keysym& ks) {
     }
 }
 
-void SdlWindow::mainLoop() {
-    running = true;
+bool SdlWindow::mainIter() {
     SDL_Event e;
-    while (running) {
-        while (SDL_PollEvent(&e)) {
-            switch(e.type) {
-                case SDL_QUIT:
-                    running = false;
-                    break;
-                case SDL_WINDOWEVENT:
-                    windowEvent(e.window);
-                    break;
-                case SDL_KEYDOWN:
-                    keyEvent(e.key.keysym);
-                    break;
-                case SDL_KEYUP:
-                    if (e.key.keysym.sym == curr)
-                        keyDown = false;
-                    break;
-                case SDL_MOUSEMOTION:
-                    motionEvent(e.motion);
-                    break;
-                case SDL_MOUSEBUTTONDOWN:
-                    mouseEventDown(e.button);
-                    break;
-                case SDL_MOUSEBUTTONUP:
-                    mouseEventUp(e.button);
-                    break;
-            }
-        }
-        if (onIdle)
-            onIdle();
-        if (requiresExpose) {
-            onExpose();
-            SDL_GL_SwapWindow(_handle->hwnd);
-            requiresExpose = false;
+    while (SDL_PollEvent(&e)) {
+        switch(e.type) {
+            case SDL_QUIT:
+                running = false;
+                break;
+            case SDL_WINDOWEVENT:
+                windowEvent(e.window);
+                break;
+            case SDL_KEYDOWN:
+                keyEvent(e.key.keysym);
+                break;
+            case SDL_KEYUP:
+                if (e.key.keysym.sym == curr)
+                    keyDown = false;
+                break;
+            case SDL_MOUSEMOTION:
+                motionEvent(e.motion);
+                break;
+            case SDL_MOUSEBUTTONDOWN:
+                mouseEventDown(e.button);
+                break;
+            case SDL_MOUSEBUTTONUP:
+                mouseEventUp(e.button);
+                break;
         }
     }
+    if (onIdle)
+        onIdle();
+    if (requiresExpose) {
+        onExpose();
+        requiresExpose = false;
+        return true;
+    }
+    return false;
+}
+
+void SdlWindow::mainLoop() {
+    running = true;
+#ifdef __EMSCRIPTEN__
+    emscripten_set_main_loop([this]() { this->mainIter(); }, 60, 1);
+#else
+    while (running) {
+        bool glSwap = mainIter();
+        if (onIdle)
+            onIdle();
+        if (glSwap) {
+            SDL_GL_SwapWindow(_handle->hwnd);
+        }
+    }
+#endif
 }
 
 void SdlWindow::getWindowSize(int& w, int& h) {

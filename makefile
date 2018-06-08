@@ -46,7 +46,7 @@ PREFIX = ./bin
 INSTALL = /usr/bin/install
 
 # Use the MFEM build directory
-MFEM_DIR = ../mfem-default
+MFEM_DIR = ../mfem
 CONFIG_MK = $(MFEM_DIR)/config/config.mk
 # Use the MFEM install directory
 # MFEM_DIR = ../mfem/mfem
@@ -69,7 +69,7 @@ CPPFLAGS = $(MFEM_CPPFLAGS)
 CXXFLAGS = $(MFEM_CXXFLAGS)
 
 # MFEM config does not define C compiler
-CC     = gcc 
+CC     = emcc 
 CFLAGS = -O3 
 
 # Optional link flags
@@ -119,11 +119,12 @@ X11_SEARCH_PATHS = /usr /usr/X11 /opt/X11 /usr/X11R6
 X11_SEARCH_FILE = include/X11/Xlib.h
 X11_DIR = $(call find_dir,$(X11_SEARCH_FILE),$(X11_SEARCH_PATHS))
 X11_LIB_DIR = $(call find_dir,libX11.$(SO_EXT),$(X11_DIR)/lib64 $(X11_DIR)/lib)
-GL_OPTS = -I$(BREW_PATH)/include
+#GL_OPTS = -I$(BREW_PATH)/include
+GL_OPTS = -s USE_SDL=2 -s USE_SDL_TTF=2
 # for servers not supporting GLX 1.3:
 # GL_OPTS = -I$(X11_DIR)/include -DGLVIS_GLX10
 
-GL_LIBS = -L$(BREW_PATH)/lib -framework OpenGL -lGLEW -lSDL2
+GL_LIBS = -L$(BREW_PATH)/lib -s USE_SDL=2 -lGLEW -lSDL2
 
 GLVIS_FLAGS += $(GL_OPTS)
 GLVIS_LIBS  += $(GL_LIBS)
@@ -152,7 +153,7 @@ USE_FREETYPE = YES
 # get libs with:   freetype-config --libs    or  pkg-config freetype2 --libs
 # libfontconfig:   pkg-config fontconfig --cflags
 #                  pkg-config fontconfig --libs
-FT_OPTS = -DGLVIS_USE_FREETYPE -I$(X11_DIR)/include/freetype2
+FT_OPTS = -DGLVIS_USE_FREETYPE -s USE_FREETYPE=1 #-I$(X11_DIR)/include/freetype2
 FT_LIBS = -lfreetype -lfontconfig
 ifeq ($(USE_FREETYPE),YES)
    GLVIS_FLAGS += $(FT_OPTS)
@@ -167,16 +168,15 @@ CCC  = $(strip $(CXX) $(GLVIS_FLAGS))
 Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 
 # generated with 'echo lib/*.c*'
-SOURCE_FILES = lib/aux_vis.cpp lib/aux_gl3.cpp lib/font.cpp lib/sdl.cpp lib/gl2ps.c \
+SOURCE_FILES = lib/aux_vis.cpp lib/aux_gl3.cpp lib/font.cpp lib/sdl.cpp \
  lib/material.cpp lib/openglvis.cpp lib/palettes.cpp lib/threads.cpp lib/vsdata.cpp \
- lib/vssolution3d.cpp lib/vssolution.cpp lib/vsvector3d.cpp lib/vsvector.cpp lib/glstate.cpp
+ lib/vssolution.cpp lib/glstate.cpp
 OBJECT_FILES1 = $(SOURCE_FILES:.cpp=.o)
 OBJECT_FILES = $(OBJECT_FILES1:.c=.o)
 # generated with 'echo lib/*.h*'
-HEADER_FILES = lib/aux_vis.hpp lib/aux_gl3.hpp lib/font.hpp lib/sdl.hpp lib/gl2ps.h lib/material.hpp \
+HEADER_FILES = lib/aux_vis.hpp lib/aux_gl3.hpp lib/font.hpp lib/sdl.hpp lib/material.hpp \
  lib/openglvis.hpp lib/palettes.hpp lib/threads.hpp lib/visual.hpp \
- lib/vsdata.hpp lib/vssolution3d.hpp lib/vssolution.hpp lib/vsvector3d.hpp \
- lib/vsvector.hpp lib/glstate.hpp
+ lib/vsdata.hpp lib/vssolution.hpp lib/glstate.hpp
 
 # Targets
 

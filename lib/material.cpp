@@ -17,7 +17,7 @@
 #endif
 #include "aux_vis.hpp"
 
-#include "gl2ps.h"
+//#include "gl2ps.h"
 
 extern int visualize;
 extern int GetMultisample();

@@ -974,6 +974,7 @@ void KeyS()
 
 void KeyCtrlP()
 {
+    /*
    int state, buffsize;
    FILE * fp;
    GLint viewport[4] = { 0, 0, 0, 0 };
@@ -1008,6 +1009,8 @@ void KeyCtrlP()
 
    cout << "done" << endl;
    locscene -> Draw();
+   */
+    cout << "Printing disabled" << endl;
 }
 
 void KeyQPressed()
@@ -1347,18 +1350,18 @@ void Cone()
    int i;
 
    glBegin(GL_TRIANGLE_FAN);
-   glNormal3d(0.0, 0.0, 1.0);
-   glVertex3d(0, 0, 0);
-   glNormal3d(1.0, 0.0, nz);
-   glVertex3d(1, 0, -4);
+   glNormal3f(0.0, 0.0, 1.0);
+   glVertex3f(0, 0, 0);
+   glNormal3f(1.0, 0.0, nz);
+   glVertex3f(1, 0, -4);
    for (i = 1; i < n; i++)
    {
-      glNormal3d(cos(point), sin(point), nz);
-      glVertex3d(cos(point), sin(point), -4);
+      glNormal3f(cos(point), sin(point), nz);
+      glVertex3f(cos(point), sin(point), -4);
       point += step;
    }
-   glNormal3d(1.0, 0.0, nz);
-   glVertex3d(1, 0, -4);
+   glNormal3f(1.0, 0.0, nz);
+   glVertex3f(1, 0, -4);
    glEnd();
 }
 
@@ -1418,7 +1421,7 @@ float MySetColor (double val, float (&rgba)[4])
 
    if (UseTexture)
    {
-      //glTexCoord1d(val);
+      //glTexCoord1f(val);
       return val;
    }
 
@@ -1479,7 +1482,7 @@ void MySetColor (double val) {
    }
    */
    if (UseTexture) {
-       glTexCoord1d (val);
+       glTexCoord1f(val);
    } else {
        glColor4f ( rgb[0], rgb[1], rgb[2], rgb[3]);
    }

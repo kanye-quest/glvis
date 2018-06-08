@@ -15,8 +15,6 @@
 #include "aux_vis.hpp"
 #include "platform_gl.hpp"
 
-extern void paletteRebind();
-
 struct vert_tex2d {
     float x, y;
     float u, v;

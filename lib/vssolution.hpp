@@ -161,10 +161,11 @@ void DrawQuad(const double pts[][3], const double cv[],
 void DrawQuad(const double (&pts)[4][3], const double (&cv)[4],
               const double minv, const double maxv, gl3::VertexBuffer& buff);
 
+/*
 void DrawPatch(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
                const int n, const Array<int> &ind, const double minv,
                const double maxv, const int normals_opt = 0);
-
+*/
 void DrawPatch(gl3::VertexBuffer& buff, const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
                const int n, const Array<int> &ind, const double minv,
                const double maxv, const int normals_opt = 0);

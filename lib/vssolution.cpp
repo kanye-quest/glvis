@@ -503,14 +503,6 @@ void VisualizationSceneSolution::Init()
       wnd->setOnKeyDown(SDLK_F12, KeyF12Pressed);
    }
 
-   displlist  = glGenLists (1);
-   linelist   = glGenLists (1);
-   lcurvelist = glGenLists (1);
-   bdrlist    = glGenLists (1);
-   cp_list    = glGenLists (1);
-   e_nums_list  = glGenLists (1);
-   v_nums_list  = glGenLists (1);
-
    Prepare();
    PrepareLines();
    PrepareLevelCurves();
@@ -520,13 +512,6 @@ void VisualizationSceneSolution::Init()
 
 VisualizationSceneSolution::~VisualizationSceneSolution()
 {
-   glDeleteLists (displlist, 1);
-   glDeleteLists (linelist, 1);
-   glDeleteLists (lcurvelist, 1);
-   glDeleteLists (bdrlist, 1);
-   glDeleteLists (cp_list, 1);
-   glDeleteLists (e_nums_list, 1);
-   glDeleteLists (v_nums_list, 1);
 }
 
 void VisualizationSceneSolution::ToggleDrawElems()
@@ -1008,11 +993,11 @@ void VisualizationSceneSolution::ToggleLogscale(bool print)
 void DrawNumberedMarker(const double x[3], double dx, int n)
 {
    glBegin(GL_LINES);
-   // glColor4d(0, 0, 0, 0);
-   glVertex3d(x[0]-dx, x[1]-dx, x[2]);
-   glVertex3d(x[0]+dx, x[1]+dx, x[2]);
-   glVertex3d(x[0]+dx, x[1]-dx, x[2]);
-   glVertex3d(x[0]-dx, x[1]+dx, x[2]);
+   // glColor4f(0, 0, 0, 0);
+   glVertex3f(x[0]-dx, x[1]-dx, x[2]);
+   glVertex3f(x[0]+dx, x[1]+dx, x[2]);
+   glVertex3f(x[0]+dx, x[1]-dx, x[2]);
+   glVertex3f(x[0]-dx, x[1]+dx, x[2]);
    glEnd();
 
 #ifndef GLVIS_USE_FREETYPE
@@ -1023,9 +1008,9 @@ void DrawNumberedMarker(const double x[3], double dx, int n)
    ostringstream buf;
    buf << n;
 
-   glRasterPos3d (x[0], x[1], x[2]);
+
 #ifndef GLVIS_USE_FREETYPE
-   glRasterPos3d (x[0], x[1], x[2]);
+   glRasterPos3f (x[0], x[1], x[2]);
    glCallLists(buf.str().size(), GL_UNSIGNED_BYTE, buf.str().c_str());
 #else
    DrawBitmapText(buf.str().c_str(), x[0], x[1], x[2]);
@@ -1040,7 +1025,7 @@ void DrawNumberedMarker(const double x[3], double dx, int n, gl3::TextBuffer& bu
 {
     gl3::LineBuilder bld = buff.createBuilder();
     bld.glBegin(GL_LINES);
-    // glColor4d(0, 0, 0, 0);
+    // glColor4f(0, 0, 0, 0);
     bld.glVertex3d(x[0]-dx, x[1]-dx, x[2]);
     bld.glVertex3d(x[0]+dx, x[1]+dx, x[2]);
     bld.glVertex3d(x[0]+dx, x[1]-dx, x[2]);
@@ -1059,11 +1044,11 @@ void DrawTriangle(const double pts[][3], const double cv[],
       return;
    }
    glBegin(GL_TRIANGLES);
-   glNormal3dv(nor);
+   glNormal3f(nor[0],nor[1],nor[2]);
    for (int j = 0; j < 3; j++)
    {
       MySetColor(cv[j], minv, maxv);
-      glVertex3dv(pts[j]);
+      glVertex3f(pts[j][0],pts[j][1],pts[j][2]);
    }
    glEnd();
 }
@@ -1125,11 +1110,11 @@ void DrawQuad(const double pts[][3], const double cv[],
       return;
    }
    glBegin(GL_QUADS);
-   glNormal3dv(nor);
+   glNormal3f(nor[0],nor[1],nor[2]);
    for (int j = 0; j < 4; j++)
    {
       MySetColor(cv[j], minv, maxv);
-      glVertex3dv(pts[j]);
+      glVertex3f(pts[j][0],pts[j][1],pts[j][2]);
    }
    glEnd();
 }
@@ -1163,6 +1148,7 @@ void RemoveFPErrors(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
    f_ind.SetSize(o);
 }
 
+/*
 void DrawPatch(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
                const int n, const Array<int> &ind, const double minv,
                const double maxv, const int normals_opt)
@@ -1256,6 +1242,7 @@ void DrawPatch(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
    }
    glEnd();
 }
+*/
 
 void DrawPatch(gl3::VertexBuffer& buff, const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
                const int n, const Array<int> &ind, const double minv,
@@ -1439,8 +1426,8 @@ void VisualizationSceneSolution::PrepareWithNormals()
          }
 #else
          MySetColor(v.pos[2], minv, maxv);
-         glNormal3fv((const float*) v.norm);
-         glVertex3fv((const float*) v.pos);
+         glNormal3f((const float*) v.norm[0],(const float*) v.norm[1],(const float*) v.norm[2]);
+         glVertex3f((const float*) v.pos[0],(const float*) v.pos[1],(const float*) v.pos[2]);
 #endif
       }
 #ifndef GLVIS_OGL3
@@ -1709,8 +1696,8 @@ void VisualizationSceneSolution::Prepare()
                }
 #else
                MySetColor(z, minv, maxv);
-               glNormal3fv((const float*) v.norm);
-               glVertex3fv((const float*) v.pos);
+               glNormal3f((const float*) v.norm[0],(const float*) v.norm[1],(const float*) v.norm[2]);
+               glVertex3f((const float*) v.pos[0],(const float*) v.pos[1],(const float*) v.pos[2]);
 #endif
             }
 #ifndef GLVIS_OGL3
@@ -2420,7 +2407,9 @@ void VisualizationSceneSolution::Draw()
    glEnable (GL_POLYGON_OFFSET_FILL);
    glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 
+#ifndef GLVIS_OGL3
    glDisable(GL_CLIP_PLANE0);
+#endif
    gl->disableLight();
 
 #if 0
@@ -2441,11 +2430,13 @@ void VisualizationSceneSolution::Draw()
    }
 #endif
 
+#ifndef GLVIS_OGL3
    if (draw_cp)
    {
       glClipPlane(GL_CLIP_PLANE0, CuttingPlane->Equation());
       glEnable(GL_CLIP_PLANE0);
    }
+#endif
 
    Set_Material();
    if (light)
@@ -2485,6 +2476,7 @@ void VisualizationSceneSolution::Draw()
    Set_Black_Material();
 
    // ruler may have mixture of polygons and lines
+#ifndef GLVIS_OGL3
    if (draw_cp)
    {
       glDisable(GL_CLIP_PLANE0);
@@ -2494,9 +2486,11 @@ void VisualizationSceneSolution::Draw()
    }
    else
    {
+#endif
       DrawRuler(logscale);
+#ifndef GLVIS_OGL3
    }
-
+#endif
    if (drawbdr)
    {
       callListDrawShim(bdrlist, bdr_buf);
@@ -2524,12 +2518,12 @@ void VisualizationSceneSolution::Draw()
          callListDrawShim(v_nums_list, v_nums_buf);
       }
    }
-
+#ifndef GLVIS_OGL3
    if (draw_cp)
    {
       glDisable(GL_CLIP_PLANE0);
    }
-
+#endif
    // draw axes
    if (drawaxes)
    {
