@@ -1008,7 +1008,6 @@ void DrawNumberedMarker(const double x[3], double dx, int n)
    ostringstream buf;
    buf << n;
 
-
 #ifndef GLVIS_USE_FREETYPE
    glRasterPos3f (x[0], x[1], x[2]);
    glCallLists(buf.str().size(), GL_UNSIGNED_BYTE, buf.str().c_str());
@@ -1148,7 +1147,7 @@ void RemoveFPErrors(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
    f_ind.SetSize(o);
 }
 
-/*
+#ifndef __EMSCRIPTEN__
 void DrawPatch(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
                const int n, const Array<int> &ind, const double minv,
                const double maxv, const int normals_opt)
@@ -1242,7 +1241,7 @@ void DrawPatch(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
    }
    glEnd();
 }
-*/
+#endif
 
 void DrawPatch(gl3::VertexBuffer& buff, const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
                const int n, const Array<int> &ind, const double minv,
@@ -2549,4 +2548,80 @@ void VisualizationSceneSolution::Draw()
       }
    }
 #endif
+}
+
+// 'v' must define three vectors that add up to the zero vector
+// that is v[0], v[1], and v[2] are the sides of a triangle
+int UnitCrossProd(double v[][3], double nor[])
+{
+   // normalize the three vectors
+   for (int i = 0; i < 3; i++)
+      if (Normalize(v[i]))
+      {
+         return 1;
+      }
+
+   // find the pair that forms an angle closest to pi/2, i.e. having
+   // the longest cross product:
+   double cp[3][3], max_a = 0.;
+   int k = 0;
+   for (int i = 0; i < 3; i++)
+   {
+      CrossProd(v[(i+1)%3], v[(i+2)%3], cp[i]);
+      double a = sqrt(InnerProd(cp[i], cp[i]));
+      if (max_a < a)
+      {
+         max_a = a, k = i;
+      }
+   }
+   if (max_a == 0.)
+   {
+      return 1;
+   }
+   for (int i = 0; i < 3; i++)
+   {
+      nor[i] = cp[k][i] / max_a;
+   }
+
+   return 0;
+}
+
+int Compute3DUnitNormal(const double p1[], const double p2[],
+                        const double p3[], double nor[])
+{
+   double v[3][3];
+
+   for (int i = 0; i < 3; i++)
+   {
+      v[0][i] = p2[i] - p1[i];
+      v[1][i] = p3[i] - p2[i];
+      v[2][i] = p1[i] - p3[i];
+   }
+
+   return UnitCrossProd(v, nor);
+}
+
+int Compute3DUnitNormal (const double p1[], const double p2[],
+                         const double p3[], const double p4[], double nor[])
+{
+   double v[3][3];
+
+   for (int i = 0; i < 3; i++)
+   {
+      // cross product of the two diagonals:
+      /*
+        v[0][i] = p3[i] - p1[i];
+        v[1][i] = p4[i] - p2[i];
+        v[2][i] = (p1[i] + p2[i]) - (p3[i] + p4[i]);
+      */
+
+      // cross product of the two vectors connecting the midpoints of the
+      // two pairs of opposing sides; this gives the normal vector in the
+      // midpoint of the quad:
+      v[0][i] = 0.5 * ((p2[i] + p3[i]) - (p1[i] + p4[i]));
+      v[1][i] = 0.5 * ((p4[i] + p3[i]) - (p1[i] + p2[i]));
+      v[2][i] = p1[i] - p3[i];
+   }
+
+   return UnitCrossProd(v, nor);
 }

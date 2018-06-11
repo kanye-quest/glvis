@@ -32,6 +32,7 @@ void paletteSet(int num);
 /**
  * Gets the palette color array.
  */
+void paletteRebind();
 double * paletteGet();
 int paletteGetSize();
 

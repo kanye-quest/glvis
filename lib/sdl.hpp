@@ -15,7 +15,6 @@
 #include <memory>
 #include <functional>
 #include <map>
-#include <SDL2/SDL.h>
 #include "platform_gl.hpp"
 
 #define AUX_MOUSESTATUS		3

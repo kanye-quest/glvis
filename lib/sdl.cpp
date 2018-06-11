@@ -9,10 +9,13 @@
 // terms of the GNU Lesser General Public License (as published by the Free
 // Software Foundation) version 2.1 dated February 1999.
 
-#include <SDL2/SDL.h>
 #include "platform_gl.hpp"
 #include <iostream>
 #include "sdl.hpp"
+#ifdef __EMSCRIPTEN__
+#include <SDL.h>
+#include <emscripten.h>
+#endif
 
 using std::cerr;
 using std::endl;
@@ -231,12 +234,10 @@ bool SdlWindow::mainIter() {
 void SdlWindow::mainLoop() {
     running = true;
 #ifdef __EMSCRIPTEN__
-    emscripten_set_main_loop([this]() { this->mainIter(); }, 60, 1);
+    emscripten_set_main_loop_arg([](void* arg) { ((SdlWindow*) arg)->mainIter(); }, this, 60, 1);
 #else
     while (running) {
         bool glSwap = mainIter();
-        if (onIdle)
-            onIdle();
         if (glSwap) {
             SDL_GL_SwapWindow(_handle->hwnd);
         }

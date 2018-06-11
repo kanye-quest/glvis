@@ -12,13 +12,27 @@
 #ifndef PLATFORM_GL_HPP
 #define PLATFORM_GL_HPP
 
-#include <GL/glew.h>
 #ifdef __APPLE__
-#include <OpenGL/gl.h>
-#include <OpenGL/glu.h>
+//#include <OpenGL/gl.h>
+//#include <OpenGL/glu.h>
 #else
-#include <GL/gl.h>
+//#include <GL/gl.h>
+//#include <GL/glu.h>
+#endif
+
+#ifdef __EMSCRIPTEN__
+#include <SDL2/SDL.h>
+#include <GL/glew.h>
 #include <GL/glu.h>
+//replace this with a custom matrix stack
+inline void glGetDoublev(GLenum pname, GLdouble * params) {
+    float data[16];
+    glGetFloatv(pname, data);
+    for (int i = 0; i < 16; i++) {
+        params[i] = data[i];
+    }
+}
+
 #endif
 
 #endif

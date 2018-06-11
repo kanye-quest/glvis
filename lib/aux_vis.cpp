@@ -1482,7 +1482,7 @@ void MySetColor (double val) {
    }
    */
    if (UseTexture) {
-       glTexCoord1f(val);
+       glTexCoord2f(val, 0.);
    } else {
        glColor4f ( rgb[0], rgb[1], rgb[2], rgb[3]);
    }
