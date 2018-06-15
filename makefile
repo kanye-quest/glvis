@@ -119,7 +119,7 @@ X11_SEARCH_PATHS = /usr /usr/X11 /opt/X11 /usr/X11R6
 X11_SEARCH_FILE = include/X11/Xlib.h
 X11_DIR = $(call find_dir,$(X11_SEARCH_FILE),$(X11_SEARCH_PATHS))
 X11_LIB_DIR = $(call find_dir,libX11.$(SO_EXT),$(X11_DIR)/lib64 $(X11_DIR)/lib)
-GL_OPTS = -I../thirdparty/glm -s USE_SDL=2 -s USE_SDL_TTF=2
+GL_OPTS = -Ithirdparty/glm -s USE_SDL=2 -s USE_SDL_TTF=2
 # for servers not supporting GLX 1.3:
 # GL_OPTS = -I$(X11_DIR)/include -DGLVIS_GLX10
 
@@ -183,9 +183,9 @@ HEADER_FILES = lib/aux_vis.hpp lib/aux_gl3.hpp lib/font.hpp lib/sdl.hpp lib/mate
 
 .SUFFIXES: .c .cpp .o
 .cpp.o:
-	cd $(<D); $(CCC) -c $(<F)
+	$(CCC) -g -c lib/$(<F) -o lib/$(*F).bc
 .c.o:
-	cd $(<D); $(Ccc) -c $(<F)
+	$(Ccc) -g -c lib/$(<F) -o lib/$(*F).bc
 
 glvis: override MFEM_DIR = $(MFEM_DIR1)
 glvis:	glvis.cpp lib/libglvis.a $(CONFIG_MK) $(MFEM_LIB_FILE)

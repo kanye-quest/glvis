@@ -20,7 +20,7 @@ using namespace mfem;
 #include "sdl.hpp"
 #include "palettes.hpp"
 #include "visual.hpp"
-#include "gl2ps.h"
+//#include "gl2ps.h"
 
 #if defined(GLVIS_USE_LIBTIFF)
 #include "tiffio.h"
@@ -335,8 +335,8 @@ void SetVisualizationScene(VisualizationScene * scene, int view,
    }
 
    //auxMainLoop(NULL);
-   wnd->mainLoop();
    InitIdleFuncs();
+   wnd->mainLoop();
 }
 
 void KillVisualization()

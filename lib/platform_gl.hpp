@@ -15,16 +15,8 @@
 
 #ifdef __EMSCRIPTEN__
 #include <GL/glew.h>
-#include <SDL.h>
-#include <SDL_opengl.h>
-//replace this with a custom matrix stack
-inline void glGetDoublev(GLenum pname, GLdouble * params) {
-    float data[16];
-    glGetFloatv(pname, data);
-    for (int i = 0; i < 16; i++) {
-        params[i] = data[i];
-    }
-}
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_opengl.h>
 #else
 #ifdef __APPLE__
 #include <OpenGL/gl.h>

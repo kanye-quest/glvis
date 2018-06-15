@@ -110,8 +110,11 @@ void SdlWindow::windowEvent(SDL_WindowEvent& ew) {
     switch(ew.event) {
         case SDL_WINDOWEVENT_SIZE_CHANGED:
             cerr << "Window:reshape event" << endl;
+            int w, h;
+            SDL_GL_GetDrawableSize(_handle->hwnd, &w, &h);
+            cerr << "Drawable size: w = " << w << ", h = " << h << endl;
             if (onReshape)
-                onReshape(ew.data1, ew.data2);
+                onReshape(w, h);
             break;
         case SDL_WINDOWEVENT_EXPOSED:
             cerr << "Window:expose event" << endl;
@@ -233,7 +236,10 @@ bool SdlWindow::mainIter() {
 void SdlWindow::mainLoop() {
     running = true;
 #ifdef __EMSCRIPTEN__
-    emscripten_set_main_loop_arg([](void* arg) { ((SdlWindow*) arg)->mainIter(); }, this, 60, 1);
+    emscripten_set_main_loop_arg([](void* arg) {
+                                        if(((SdlWindow*) arg)->mainIter())
+                                            SDL_GL_SwapWindow(((SdlWindow*) arg)->_handle->hwnd);
+                                    }, this, 60, 1);
 #else
     while (running) {
         bool glSwap = mainIter();

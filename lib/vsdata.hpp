@@ -15,7 +15,7 @@
 #include "openglvis.hpp"
 #include "mfem.hpp"
 #include "aux_gl3.hpp"
-#include <GL/glew.h>
+
 using namespace mfem;
 
 extern std::string plot_caption; // defined in glvis.cpp
