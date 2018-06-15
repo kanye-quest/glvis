@@ -12,9 +12,7 @@
 #define GLSTATE_HPP
 #include <string>
 
-#include <SDL2/SDL.h>
 #include "platform_gl.hpp"
-#include <SDL2/SDL_opengl.h>
 
 #include "material.hpp"
 

@@ -119,8 +119,7 @@ X11_SEARCH_PATHS = /usr /usr/X11 /opt/X11 /usr/X11R6
 X11_SEARCH_FILE = include/X11/Xlib.h
 X11_DIR = $(call find_dir,$(X11_SEARCH_FILE),$(X11_SEARCH_PATHS))
 X11_LIB_DIR = $(call find_dir,libX11.$(SO_EXT),$(X11_DIR)/lib64 $(X11_DIR)/lib)
-#GL_OPTS = -I$(BREW_PATH)/include
-GL_OPTS = -s USE_SDL=2 -s USE_SDL_TTF=2
+GL_OPTS = -I../thirdparty/glm -s USE_SDL=2 -s USE_SDL_TTF=2
 # for servers not supporting GLX 1.3:
 # GL_OPTS = -I$(X11_DIR)/include -DGLVIS_GLX10
 

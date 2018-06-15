@@ -13,7 +13,6 @@
 #include <iostream>
 #include "sdl.hpp"
 #ifdef __EMSCRIPTEN__
-#include <SDL.h>
 #include <emscripten.h>
 #endif
 
