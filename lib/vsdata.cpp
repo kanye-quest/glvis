@@ -1407,9 +1407,8 @@ void VisualizationSceneScalarData::SetAxisLabels(const char * a_x,
 
 void VisualizationSceneScalarData::PrepareAxes()
 {
-   Set_Black_Material();
-   GLfloat blk[4];
-   glGetFloatv(GL_CURRENT_COLOR, blk);
+   float blk_val = Set_Black_Material();
+   GLfloat blk[4] = { blk_val, blk_val, blk_val, 1.0 };
 
    callListBeginShim(axeslist, axes_buf);
    gl3::LineBuilder bld = axes_buf.createBuilder(true);
