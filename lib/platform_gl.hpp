@@ -12,9 +12,8 @@
 #ifndef PLATFORM_GL_HPP
 #define PLATFORM_GL_HPP
 
-
-#ifdef __EMSCRIPTEN__
 #include <GL/glew.h>
+#ifdef __EMSCRIPTEN__
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 #else
