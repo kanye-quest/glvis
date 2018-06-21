@@ -1053,7 +1053,7 @@ void DrawTriangle(const double pts[][3], const double cv[],
 }
 
 void DrawTriangle(const double (&pts)[4][3], const double (&cv)[4],
-                  const double minv, const double maxv, gl3::GlDrawable& buff)
+                  const double minv, const double maxv, gl3::VertexBuffer& buff)
 {
 #ifndef GLVIS_OGL3
     DrawTriangle(pts, cv, minv, maxv);
@@ -1063,23 +1063,21 @@ void DrawTriangle(const double (&pts)[4][3], const double (&cv)[4],
    {
       return;
    }
-   
-   double texcoord[3];
-   double rgba[3][4];
-
+   //layout: | VNC | VNC | VNC | ...
    for (int i = 0; i < 3; i++) {
-       float texCoord[i] = MySetColor(cv[i], minv, maxv, rgba[i]);
-   }
-   if (GetUseTexture()) {
-       buff.addTriangle(pts, nor, texcoord);
-   } else {
-       buff.addTriangle(pts, nor, rgba);
+       float rgba[4];
+       float texCoord = MySetColor(cv[i], minv, maxv, rgba);
+       if (GetUseTexture()) {
+           buff.addVertex((gl3::GlVertex(pts[i], nor)), texCoord);
+       } else {
+           buff.addVertex((gl3::GlVertex(pts[i], nor)), rgba);
+       }
    }
 #endif
 }
 
 void DrawQuad(const double (&pts)[4][3], const double (&cv)[4],
-              const double minv, const double maxv, gl3::GlDrawable& buff)
+              const double minv, const double maxv, gl3::VertexBuffer& buff)
 {
 #ifndef GLVIS_OGL3
     DrawQuad(pts, cv, minv, maxv);
@@ -1089,17 +1087,15 @@ void DrawQuad(const double (&pts)[4][3], const double (&cv)[4],
    {
       return;
    }
-   
-   double texcoord[4];
-   double rgba[4][4];
-   
+   //layout: | VNC | VNC | VNC | ...
    for (int i = 0; i < 4; i++) {
-       float texCoord[i] = MySetColor(cv[i], minv, maxv, rgba[i]);
-   }
-   if (GetUseTexture()) {
-       buff.addQuad(pts, nor, texcoord);
-   } else {
-       buff.addQuad(pts, nor, rgba);
+       float rgba[4];
+       float texCoord = MySetColor(cv[i], minv, maxv, rgba);
+       if (GetUseTexture()) {
+           buff.addVertex((gl3::GlVertex(pts[i], nor)), texCoord);
+       } else {
+           buff.addVertex((gl3::GlVertex(pts[i], nor)), rgba);
+       }
    }
 #endif
 }
