@@ -12,7 +12,7 @@
 #ifndef GLVIS_AUX_GL3
 #define GLVIS_AUX_GL3
 #include <vector>
-#include <map>
+#include <unordered_map>
 #include <iostream>
 #include <memory>
 
@@ -43,18 +43,120 @@ struct GlVertex
     }
 };
 
-struct PolyBuilder
-{
-    float norm[3];
-    float color[3];
-    float uv[2];
-};
+class GlDrawable;
 
-class LineBuffer;
+class PolyBuilder
+{
+    GlDrawable * parent_buf;
+    GLenum render_as;
+    std::vector<float> pts;
+    int count;
+    bool use_color;
+    bool use_color_tex;
+    float norm[3];
+    float color[4];
+    float texcoord;
+public:
+    PolyBuilder(GlDrawable * buf)
+        : parent_buf(buf)
+        , count(0) 
+        , use_color(false)
+        , use_color_tex(false){ }
+
+    void glBegin(GLenum e) {
+#ifdef GLVIS_OGL3
+        render_as = e;
+        count = 0;
+#else
+        ::glBegin(e);
+#endif
+    }
+    
+    void glEnd();
+
+    void glVertex3d(double x, double y, double z) {
+#ifdef GLVIS_OGL3
+        pts.emplace_back(x);
+        pts.emplace_back(y);
+        pts.emplace_back(z);
+        std::copy(norm, norm+3, std::back_inserter(pts));
+        if (use_color) {
+            std::copy(color, color+4, std::back_inserter(pts));
+        } else if (use_color_tex) {
+            pts.emplace_back(texcoord);
+            pts.emplace_back(0);
+        }
+        count++;
+#else
+        ::glVertex3dv(d);
+#endif
+    }
+
+    void glVertex3dv(const double * d) {
+#ifdef GLVIS_OGL3
+        pts.emplace_back(d[0]);
+        pts.emplace_back(d[1]);
+        pts.emplace_back(d[2]);
+        std::copy(norm, norm+3, std::back_inserter(pts));
+        if (use_color) {
+            std::copy(color, color+4, std::back_inserter(pts));
+        } else if (use_color_tex) {
+            pts.emplace_back(texcoord);
+            pts.emplace_back(0);
+        }
+        count++;
+#else
+        ::glVertex3dv(d);
+#endif
+    }
+
+    void glNormal3d(double nx, double ny, double nz) {
+#ifdef GLVIS_OGL3
+        norm[0] = (float) nx;
+        norm[1] = (float) ny;
+        norm[2] = (float) nz;
+#else
+        ::glNormal3d(nx, ny, nz);
+#endif
+    }
+
+    void glNormal3dv(const double * d) {
+#ifdef GLVIS_OGL3
+        norm[0] = (float) d[0];
+        norm[1] = (float) d[1];
+        norm[2] = (float) d[2];
+#else
+        ::glNormal3dv(d);
+#endif
+    }
+
+    void glColor4fv(float (&rgba)[4]) {
+#ifdef GLVIS_OGL3
+        if (pts.empty()) {
+            use_color = true;
+            use_color_tex = false;
+        }
+        std::copy(rgba, rgba + 4, color);
+#else
+        ::glColor4fv(rgba);
+#endif
+    }
+    void glTexCoord1f(float coord) {
+#ifdef GLVIS_OGL3
+        if (pts.empty()) {
+            use_color_tex = true;
+            use_color = false;
+        }
+        texcoord = coord;
+#else
+        ::glTexCoord1f(coord);
+#endif
+    }
+};
 
 class LineBuilder
 {
-    LineBuffer * parent_buf;
+    GlDrawable * parent_buf;
     GLenum render_as;
     std::vector<float> pts;
     int count;
@@ -62,7 +164,7 @@ class LineBuilder
     bool has_stipple;
     float color[4];
 public:
-    LineBuilder(LineBuffer * buf, bool save_color)
+    LineBuilder(GlDrawable * buf, bool save_color)
         : parent_buf(buf)
         , has_color(save_color)
         , has_stipple(false) { }
@@ -82,10 +184,10 @@ public:
     
     void glEnable(GLenum e) {
 #ifdef GLVIS_OGL3
-        if (pts.size() != 0) {
-            cerr << "WARNING: Disabling stipple in the middle of a glEnable/glDisable block" << endl;
-        }
         if (e == GL_LINE_STIPPLE) {
+            if (pts.size() != 0) {
+                cerr << "WARNING: Disabling stipple in the middle of a glEnable/glDisable block" << endl;
+            }
             has_stipple = true;
         }
 #else
@@ -117,121 +219,254 @@ public:
  */
 class VertexBuffer
 {
-protected:
-
-    struct _handle {
-        GLuint vbo_handles[3];
-        _handle() {
-            glGenBuffers(3, vbo_handles);
-        }
-        ~_handle() {
-            glDeleteBuffers(3, vbo_handles);
-        }
-
-        GLuint get(int i) {
-            return vbo_handles[i];
-        }
-    };
-    std::shared_ptr<_handle> vbo;
-    
-    // contains only point data
-    std::vector<float> pt_data;
-    int pt_cnt;
-    // contains interleaved point and color data
-    // default layout: V(3f)|N(3f)|C(4f)
-    std::vector<float> color_data;
-    int color_cnt;
-    // contains interleaved point and texture coord data
-    // default layout: V(3f)|N(3f)|T(1f)
-    std::vector<float> texcoord_data;
-    int texcoord_cnt;
-    
 public:
+    enum array_layout {
+        LAYOUT_VTX,
+        LAYOUT_VTX_NORMAL,
+        LAYOUT_VTX_COLOR,
+        LAYOUT_VTX_TEXTURE0,
+        LAYOUT_VTX_NORMAL_COLOR,
+        LAYOUT_VTX_NORMAL_TEXTURE0
+    };
+private:
+    array_layout _layout;
+    std::unique_ptr<GLuint> _handle;
+    std::vector<float> _pt_data;
+    int _buffered_size;
+
+    friend void LineBuilder::glEnd();
+    friend void PolyBuilder::glEnd();
+public:
+
+    VertexBuffer(array_layout layout)
+        : _layout(layout)
+        , _handle(new GLuint)
+        , _buffered_size(0) {
+        glGenBuffers(1, _handle.get());
+    }
+
+    ~VertexBuffer() {
+        if (_handle)
+            glDeleteBuffers(1, _handle.get());
+    }
+
+    VertexBuffer(VertexBuffer&&) = default;
+    VertexBuffer& operator = (VertexBuffer&&) = default;
+
+    void clear() {
+        _pt_data.clear();
+    }
+
+    array_layout getArrayLayout() { return _layout; }
+
+    void addVertex(float (&vtx)[3]) {
+        if (_layout != LAYOUT_VTX) {
+            cerr << "Unexpected vertex of layout VTX" << endl;
+            return;
+        }
+        std::copy(vtx, vtx+3, std::back_inserter(_pt_data));
+    }
+
+    void addVertex(float (&vtx)[3], float (&rgba)[4]) {
+        if (_layout != LAYOUT_VTX_COLOR) {
+            cerr << "Unexpected vertex of layout VTX_COLOR" << endl;
+            return;
+        }
+        std::copy(vtx, vtx+3, std::back_inserter(_pt_data));
+        std::copy(rgba, rgba+4, std::back_inserter(_pt_data));
+    }
+
+    void addVertex(float (&vtx)[3], float colorTexCoord) {
+        if (_layout != LAYOUT_VTX_TEXTURE0) {
+            cerr << "Unexpected vertex of layout VTX_TEXTURE0" << endl;
+            return;
+        }
+        std::copy(vtx, vtx+3, std::back_inserter(_pt_data));
+        _pt_data.emplace_back(colorTexCoord);
+        _pt_data.emplace_back(0);
+    }
+
+    void addVertex(float (&vtx)[3], float (&norm)[3], float (&rgba)[4]) {
+        if (_layout != LAYOUT_VTX_NORMAL_COLOR) {
+            cerr << "Unexpected vertex of layout LAYOUT_VTX_NORMAL_COLOR" << endl;
+            return;
+        }
+        std::copy(vtx, vtx+3, std::back_inserter(_pt_data));
+        std::copy(norm, norm+3, std::back_inserter(_pt_data));
+        std::copy(rgba, rgba+4, std::back_inserter(_pt_data));
+    }
+
+    void addVertex(float (&vtx)[3], float (&norm)[3], float colorTexCoord) {
+        if (_layout != LAYOUT_VTX_NORMAL_TEXTURE0) {
+            cerr << "Unexpected vertex of layout VTX_NORMAL_TEXTURE0" << endl;
+            return;
+        }
+        std::copy(vtx, vtx+3, std::back_inserter(_pt_data));
+        std::copy(norm, norm+3, std::back_inserter(_pt_data));
+        _pt_data.emplace_back(colorTexCoord);
+        _pt_data.emplace_back(0);
+    }
+
     /**
-     * Constructs a new Vertex buffer object.
+     * Buffers the vertex data onto the GPU.
      */
-    VertexBuffer()
-        : vbo(std::make_shared<_handle>()) {
-    }
-
-    ~VertexBuffer() { }
-
-    virtual void clear() {
-        pt_data.clear();
-        color_data.clear();
-        texcoord_data.clear();
-        pt_cnt = 0;
-        color_cnt = 0;
-        texcoord_cnt = 0;
-    }
-
-    void addVertex(GlVertex gv, float texCoord) {
-        std::move(gv.pos, gv.pos + 3, std::back_inserter(texcoord_data));
-        std::move(gv.norm, gv.norm + 3, std::back_inserter(texcoord_data));
-        texcoord_data.push_back(texCoord);
-        texcoord_data.push_back(0);
-    }
-    
-    void addVertex(GlVertex gv, float (&rgba)[4]) {
-        std::move(gv.pos, gv.pos + 3, std::back_inserter(color_data));
-        std::move(gv.norm, gv.norm + 3, std::back_inserter(color_data));
-        color_data.insert(color_data.end(), rgba, rgba+4);
-    }
-
-    virtual void BufferData();
+    void bufferData();
 
     /**
-     * Draws the VBO.
+     * Draws the vertex data.
      */
-    virtual void DrawObject(GLenum renderAs);
+    void drawObject(GLenum renderAs);
 };
 
-class LineBuffer : public VertexBuffer {
-    //texcoord_data is used to store stipple lines
-    friend void LineBuilder::glEnd();
+class TextBuffer {
+private:
+    std::unique_ptr<GLuint> _handle;
+    std::vector<float> _pt_data;
+    float rast_x, rast_y, rast_z;
+    size_t size;
 public:
-
-    void addVertex(float x, float y, float z) {
-        pt_data.push_back(x);
-        pt_data.push_back(y);
-        pt_data.push_back(z);
+    TextBuffer(float x, float y, float z, std::string& text) noexcept;
+    ~TextBuffer() {
+        if (_handle)
+            glDeleteBuffers(1, _handle.get());
     }
 
-    LineBuilder createBuilder(bool save_color = false) {
+    TextBuffer(TextBuffer&&) = default;
+    TextBuffer& operator = (TextBuffer&&) = default;
+
+    /**
+     * Draws the text.
+     */
+    void drawObject();
+};
+
+class GlDrawable {
+private:
+    std::unordered_map<GLenum, VertexBuffer> buffers[6];
+    std::vector<TextBuffer> text_buffers;
+public:
+
+    /**
+     * Adds a string at the given position in object coordinates.
+     */
+    void addText(float x, float y, float z, std::string&& text) {
+        text_buffers.emplace_back(x, y, z, text);
+    }
+
+    /**
+     * Adds a triangle to the drawable object, with the specified face normal
+     * and vertex coloring.
+     */
+    void addTriangle(const double vtx[][3], double (&norm)[3], float (&rgba)[3][4]) {
+        float fnorm[3] = { (float) norm[0], (float) norm[1], (float) norm[2] };
+        for (int i = 0; i < 3; i++) {
+            float fvert[3] = { (float) vtx[i][0], (float) vtx[i][1], (float) vtx[i][2] };
+            getBuffer(VertexBuffer::LAYOUT_VTX_NORMAL_COLOR,
+                  GL_TRIANGLES).addVertex(fvert, fnorm, rgba[i]);
+        }
+    }
+
+    /**
+     * Adds a triangle to the drawable object, with the specified face normal
+     * and color texture coordinates.
+     */
+    void addTriangle(const double vtx[][3], double (&norm)[3], float (&texcoord)[3]) {
+        float fnorm[3] = { (float) norm[0], (float) norm[1], (float) norm[2] };
+        for (int i = 0; i < 3; i++) {
+            float fvert[3] = { (float) vtx[i][0], (float) vtx[i][1], (float) vtx[i][2] };
+            getBuffer(VertexBuffer::LAYOUT_VTX_NORMAL_TEXTURE0,
+                  GL_TRIANGLES).addVertex(fvert, fnorm, texcoord[i]);
+        }
+    }
+
+    /**
+     * Adds a quadrilateral to the drawable object, with the specified face normal
+     * and vertex coloring.
+     */
+    void addQuad(const double (&vtx)[4][3], double (&norm)[3], float (&rgba)[4][4]) {
+        float fnorm[3] = { (float) norm[0], (float) norm[1], (float) norm[2] };
+        int ordering[] = {1, 2, 4, 2, 3, 4};
+        for (int i = 0; i < 6; i++) {
+            float fvert[3] = { (float) vtx[ordering[i]][0],
+                               (float) vtx[ordering[i]][1],
+                               (float) vtx[ordering[i]][2] };
+            getBuffer(VertexBuffer::LAYOUT_VTX_NORMAL_COLOR,
+                  GL_TRIANGLES).addVertex(fvert, fnorm, rgba[ordering[i]]);
+        }
+    }
+
+    /**
+     * Adds a quadrilateral to the drawable object, with the specified face normal
+     * and color texture coordinates.
+     */
+    void addQuad(const double (&vtx)[4][3], double (&norm)[3], float (&texcoord)[4]) {
+        float fnorm[3] = { (float) norm[0], (float) norm[1], (float) norm[2] };
+        int ordering[] = {1, 2, 4, 2, 3, 4};
+        for (int i = 0; i < 3; i++) {
+            float fvert[3] = { (float) vtx[ordering[i]][0],
+                               (float) vtx[ordering[i]][1],
+                               (float) vtx[ordering[i]][2] };
+            getBuffer(VertexBuffer::LAYOUT_VTX_NORMAL_TEXTURE0,
+                  GL_TRIANGLES).addVertex(fvert, fnorm, texcoord[ordering[i]]);
+        }
+    }
+
+    VertexBuffer& getBuffer(VertexBuffer::array_layout layout, GLenum shape) {
+        auto loc = buffers[layout].find(shape);
+        if (loc != buffers[layout].end()) {
+            return loc->second;
+        }
+        buffers[layout].emplace(std::make_pair(shape, VertexBuffer(layout)));
+        return buffers[layout].at(shape);
+    }
+    
+    /**
+     * Creates a new LineBuilder associated with the current drawable object.
+     */
+    LineBuilder createLineBuilder(bool save_color = false) {
         return LineBuilder(this, save_color);
     }
 
-    virtual void BufferData();
-
-    /**
-     * Draws the VBO.
-     */
-    virtual void DrawObject(GLenum renderAs);
-    
-    virtual void DrawObject();
-};
-
-class TextBuffer : public LineBuffer {
-    struct _text_entry {
-        float x, y, z;
-        std::string str;
-        _text_entry(float x, float y, float z, std::string str)
-            : x(x), y(y), z(z), str(std::move(str)) { }
-    };
-    std::vector<_text_entry> entries;
-public:
-    TextBuffer() { }
-    ~TextBuffer() { }
-
-    virtual void clear() {
-        entries.clear();
-        LineBuffer::clear();
+    PolyBuilder createPolyBuilder() {
+        return PolyBuilder(this);
     }
 
-    void SetText(float x, float y, float z, std::string text);
-    virtual void BufferData();
-    virtual void DrawObject(GLenum renderAs);
-    virtual void DrawObject();
+    /**
+     * Clears the drawable object.
+     */
+    void clear() {
+        for (int i = 0; i < 6; i++) {
+            for (auto& pair : buffers[i]) {
+                pair.second.clear();
+            }
+        }
+        text_buffers.clear();
+    }
+    
+    /**
+     * Buffers the drawable object onto the GPU.
+     */
+    void buffer() {
+        for (int i = 0; i < 6; i++) {
+            for (auto& pair : buffers[i]) {
+                pair.second.bufferData();
+            }
+        }
+    }
+
+    /**
+     * Draws the object.
+     */
+    void draw() {
+        for (int i = 0; i < 6; i++) {
+            for (auto& pair : buffers[i]) {
+                pair.second.drawObject(pair.first);
+            }
+        }
+        for (auto& text : text_buffers) {
+            text.drawObject();
+        }
+    }
 };
 
 }

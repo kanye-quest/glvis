@@ -1409,9 +1409,9 @@ void VisualizationSceneScalarData::PrepareAxes()
 {
    float blk_val = Set_Black_Material();
    GLfloat blk[4] = { blk_val, blk_val, blk_val, 1.0 };
-
-   callListBeginShim(axeslist, axes_buf);
-   gl3::LineBuilder bld = axes_buf.createBuilder(true);
+   axes_buf.clear();
+   
+   gl3::LineBuilder bld = axes_buf.createLineBuilder(true);
    if (drawaxes == 3)
    {
       //glLineStipple(1, 255);
@@ -1497,19 +1497,18 @@ void VisualizationSceneScalarData::PrepareAxes()
       ostringstream buf;
       buf << setprecision(4)
           << "(" << x[0] << "," << y[0] << ","  << z[0] << ")" ;
-      axes_buf.SetText(x[0], y[0], z[0], buf.str());
+      axes_buf.addText(x[0], y[0], z[0], buf.str());
 
       ostringstream buf1;
       buf1 << setprecision(4)
            << "(" << x[1] << "," << y[1] << "," << z[1] << ")" ;
-      axes_buf.SetText(x[1], y[1], z[1], buf1.str());
+      axes_buf.addText(x[1], y[1], z[1], buf1.str());
 
 #ifndef GLVIS_USE_FREETYPE
       glPopAttrib();
 #endif
    }
-
-   callListEndShim(axes_buf);
+   axes_buf.buffer();
 }
 
 void VisualizationSceneScalarData::DrawPolygonLevelLines(

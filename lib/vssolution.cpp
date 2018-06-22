@@ -1020,9 +1020,9 @@ void DrawNumberedMarker(const double x[3], double dx, int n)
 #endif
 }
 
-void DrawNumberedMarker(const double x[3], double dx, int n, gl3::TextBuffer& buff)
+void DrawNumberedMarker(const double x[3], double dx, int n, gl3::GlDrawable& buff)
 {
-    gl3::LineBuilder bld = buff.createBuilder();
+    gl3::LineBuilder bld = buff.createLineBuilder();
     bld.glBegin(GL_LINES);
     // glColor4f(0, 0, 0, 0);
     bld.glVertex3d(x[0]-dx, x[1]-dx, x[2]);
@@ -1031,7 +1031,7 @@ void DrawNumberedMarker(const double x[3], double dx, int n, gl3::TextBuffer& bu
     bld.glVertex3d(x[0]-dx, x[1]+dx, x[2]);
     bld.glEnd();
 
-    buff.SetText(x[0], x[1], x[2], std::to_string(n));
+    buff.addText(x[0], x[1], x[2], std::to_string(n));
 }
 
 void DrawTriangle(const double pts[][3], const double cv[],
@@ -1053,7 +1053,7 @@ void DrawTriangle(const double pts[][3], const double cv[],
 }
 
 void DrawTriangle(const double (&pts)[4][3], const double (&cv)[4],
-                  const double minv, const double maxv, gl3::VertexBuffer& buff)
+                  const double minv, const double maxv, gl3::GlDrawable& buff)
 {
 #ifndef GLVIS_OGL3
     DrawTriangle(pts, cv, minv, maxv);
@@ -1063,21 +1063,23 @@ void DrawTriangle(const double (&pts)[4][3], const double (&cv)[4],
    {
       return;
    }
-   //layout: | VNC | VNC | VNC | ...
+   
+   float texcoord[3];
+   float rgba[3][4];
+
    for (int i = 0; i < 3; i++) {
-       float rgba[4];
-       float texCoord = MySetColor(cv[i], minv, maxv, rgba);
-       if (GetUseTexture()) {
-           buff.addVertex((gl3::GlVertex(pts[i], nor)), texCoord);
-       } else {
-           buff.addVertex((gl3::GlVertex(pts[i], nor)), rgba);
-       }
+       texcoord[i] = MySetColor(cv[i], minv, maxv, rgba[i]);
+   }
+   if (GetUseTexture()) {
+       buff.addTriangle(pts, nor, texcoord);
+   } else {
+       buff.addTriangle(pts, nor, rgba);
    }
 #endif
 }
 
 void DrawQuad(const double (&pts)[4][3], const double (&cv)[4],
-              const double minv, const double maxv, gl3::VertexBuffer& buff)
+              const double minv, const double maxv, gl3::GlDrawable& buff)
 {
 #ifndef GLVIS_OGL3
     DrawQuad(pts, cv, minv, maxv);
@@ -1087,15 +1089,17 @@ void DrawQuad(const double (&pts)[4][3], const double (&cv)[4],
    {
       return;
    }
-   //layout: | VNC | VNC | VNC | ...
+   
+   float texcoord[4];
+   float rgba[4][4];
+   
    for (int i = 0; i < 4; i++) {
-       float rgba[4];
-       float texCoord = MySetColor(cv[i], minv, maxv, rgba);
-       if (GetUseTexture()) {
-           buff.addVertex((gl3::GlVertex(pts[i], nor)), texCoord);
-       } else {
-           buff.addVertex((gl3::GlVertex(pts[i], nor)), rgba);
-       }
+       texcoord[i] = MySetColor(cv[i], minv, maxv, rgba[i]);
+   }
+   if (GetUseTexture()) {
+       buff.addQuad(pts, nor, texcoord);
+   } else {
+       buff.addQuad(pts, nor, rgba);
    }
 #endif
 }
@@ -1243,13 +1247,14 @@ void DrawPatch(const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
 }
 #endif
 
-void DrawPatch(gl3::VertexBuffer& buff, const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
+void DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals, DenseMatrix &normals,
                const int n, const Array<int> &ind, const double minv,
                const double maxv, const int normals_opt)
 {
 #ifndef GLVIS_OGL3
     DrawPatch(pts, vals, normals, n, ind, minv, maxv, normals_opt);
 #else
+   gl3::PolyBuilder poly = drawable.createPolyBuilder();
    double na[3];
 
    if (normals_opt == 1 || normals_opt == -2)
@@ -1274,6 +1279,14 @@ void DrawPatch(gl3::VertexBuffer& buff, const DenseMatrix &pts, Vector &vals, De
       }
    }
 
+   if (n == 3)
+   {
+      poly.glBegin(GL_TRIANGLES);
+   }
+   else
+   {
+      poly.glBegin(GL_QUADS);
+   }
    if (normals_opt != 0 && normals_opt != -1)
    {
       if (normals_opt > 0)
@@ -1285,14 +1298,15 @@ void DrawPatch(gl3::VertexBuffer& buff, const DenseMatrix &pts, Vector &vals, De
             MySetColor(vals(ind[i]), minv, maxv);
             glVertex3dv(&pts(0, ind[i]));
             */
-             gl3::GlVertex v(&pts(0, ind[i]), &normals(0, ind[i]));
-             float rgba[4];
-             float texCoord = MySetColor(vals(ind[i]), minv, maxv, rgba);
-             if (GetUseTexture()) {
-                 buff.addVertex(v, texCoord);
-             } else {
-                 buff.addVertex(v, rgba);
-             }
+            poly.glNormal3dv(&normals(0, ind[i]));
+            float rgba[4];
+            float texCoord = MySetColor(vals(ind[i]), minv, maxv, rgba);
+            if (GetUseTexture()) {
+                poly.glTexCoord1f(texCoord);
+            } else {
+                poly.glColor4fv(rgba);
+            }
+            poly.glVertex3dv(&pts(0, ind[i]));
          }
       }
       else
@@ -1304,14 +1318,15 @@ void DrawPatch(gl3::VertexBuffer& buff, const DenseMatrix &pts, Vector &vals, De
             MySetColor(vals(ind[i]), minv, maxv);
             glVertex3dv(&pts(0, ind[i]));
             */
-             gl3::GlVertex v(&pts(0, ind[i]), &normals(0, ind[i]));
-             float rgba[4];
-             float texCoord = MySetColor(vals(ind[i]), minv, maxv, rgba);
-             if (GetUseTexture()) {
-                 buff.addVertex(v, texCoord);
-             } else {
-                 buff.addVertex(v, rgba);
-             }
+            poly.glNormal3dv(&normals(0, ind[i]));
+            float rgba[4];
+            float texCoord = MySetColor(vals(ind[i]), minv, maxv, rgba);
+            if (GetUseTexture()) {
+                poly.glTexCoord1f(texCoord);
+            } else {
+                poly.glColor4fv(rgba);
+            }
+            poly.glVertex3dv(&pts(0, ind[i]));
          }
       }
    }
@@ -1330,49 +1345,38 @@ void DrawPatch(gl3::VertexBuffer& buff, const DenseMatrix &pts, Vector &vals, De
          {
             if (normals_opt == 0)
             {
-               //glNormal3dv(na);
+               poly.glNormal3dv(&normals(0, ind[i]));
                for ( ; j < n; j++)
                {
-                  /*
-                  MySetColor(vals(ind[i+j]), minv, maxv);
-                  glVertex3dv(&pts(0, ind[i+j]));
-                  */
-                  gl3::GlVertex v (&pts(0, ind[i+j]), na);
                   float rgba[4];
-                  float texCoord = MySetColor(vals(ind[i+j]), minv, maxv, rgba);
+                  float texCoord = MySetColor(vals(ind[i]), minv, maxv, rgba);
                   if (GetUseTexture()) {
-                      buff.addVertex(v, texCoord);
+                      poly.glTexCoord1f(texCoord);
                   } else {
-                      buff.addVertex(v, rgba);
+                      poly.glColor4fv(rgba);
                   }
+                  poly.glVertex3dv(&pts(0, ind[i]));
                }
             }
             else
             {
-               //glNormal3d(-na[0], -na[1], -na[2]);
+               poly.glNormal3d(-na[0], -na[1], -na[2]);
                for (j = n-1; j >= 0; j--)
                {
-                /*
-                  MySetColor(vals(ind[i+j]), minv, maxv);
-                  glVertex3dv(&pts(0, ind[i+j]));
-                  */
-                  gl3::GlVertex v (&pts(0, ind[i+j]));
-                  v.norm[0] = -na[0];
-                  v.norm[1] = -na[1];
-                  v.norm[2] = -na[2];
                   float rgba[4];
-                  float texCoord = MySetColor(vals(ind[i+j]), minv, maxv, rgba);
+                  float texCoord = MySetColor(vals(ind[i]), minv, maxv, rgba);
                   if (GetUseTexture()) {
-                      buff.addVertex(v, texCoord);
+                      poly.glTexCoord1f(texCoord);
                   } else {
-                      buff.addVertex(v, rgba);
+                      poly.glColor4fv(rgba);
                   }
+                  poly.glVertex3dv(&pts(0, ind[i]));
                }
             }
          }
       }
    }
-   //glEnd();
+   poly.glEnd();
 #endif
 }
 
@@ -1380,7 +1384,8 @@ void DrawPatch(gl3::VertexBuffer& buff, const DenseMatrix &pts, Vector &vals, De
 
 void VisualizationSceneSolution::PrepareWithNormals()
 {
-   callListBeginShim(displlist, disp_buf);
+   disp_buf[1].clear();
+   gl3::PolyBuilder poly = disp_buf[1].createPolyBuilder();
    Array<int> vertices;
    double *vtx, *nor, val, s;
 
@@ -1398,48 +1403,40 @@ void VisualizationSceneSolution::PrepareWithNormals()
       {
          shape = GL_QUADS;
       }
-#ifndef GLVIS_OGL3
-      glBegin(shape);
-#endif
-      gl3::GlVertex v;
+      poly.glBegin(shape);
       for (int j = 0; j < vertices.Size(); j++)
       {
          vtx = mesh->GetVertex(vertices[j]);
          nor = &(*v_normals)(3*vertices[j]);
          val = (*sol)(vertices[j]);
-         v.pos[0] = vtx[0];  v.pos[1] = vtx[1];  v.pos[2] = val;
-         v.norm[0] = nor[0]; v.norm[1] = nor[1]; v.norm[2] = nor[2];
          if (logscale && val >= minv && val <= maxv)
          {
             s = log_a/val;
-            v.pos[2] = _LogVal_(val);
-            v.norm[0] *= s; v.norm[1] *= s;
+            val = _LogVal_(val);
+            poly.glNormal3d(s*nor[0], s*nor[1], nor[2]);
          }
-#ifdef GLVIS_OGL3
+         else
+         {
+            poly.glNormal3dv(nor);
+         }
          float rgba[4];
-         float texCoord = MySetColor(v.pos[2], minv, maxv, rgba);
+         float texCoord = MySetColor(val, minv, maxv, rgba);
          if (GetUseTexture()) {
-             disp_buf[shape].addVertex(v, texCoord);
+             poly.glTexCoord1f(texCoord);
          } else {
-             disp_buf[shape].addVertex(v, rgba);
+             poly.glColor4fv(rgba);
          }
-#else
-         MySetColor(v.pos[2], minv, maxv);
-         glNormal3f((const float*) v.norm[0],(const float*) v.norm[1],(const float*) v.norm[2]);
-         glVertex3f((const float*) v.pos[0],(const float*) v.pos[1],(const float*) v.pos[2]);
-#endif
+         poly.glVertex3d(vtx[0], vtx[1], val);
       }
-#ifndef GLVIS_OGL3
-      glEnd();
-#endif
+      poly.glEnd();
    }
-   callListEndShim(disp_buf);
+   disp_buf[1].buffer();
 }
 
 void VisualizationSceneSolution::PrepareFlat()
 {
    int i, j;
-   callListBeginShim(displlist, disp_buf);
+   disp_buf[0].clear();
    int ne = mesh -> GetNE();
    DenseMatrix pointmat;
    Array<int> vertices;
@@ -1460,14 +1457,14 @@ void VisualizationSceneSolution::PrepareFlat()
       }
       if (j == 3)
       {
-         DrawTriangle(pts, col, minv, maxv, disp_buf[GL_TRIANGLES]);
+         DrawTriangle(pts, col, minv, maxv, disp_buf[0]);
       }
       else
       {
-         DrawQuad(pts, col, minv, maxv, disp_buf[GL_QUADS]);
+         DrawQuad(pts, col, minv, maxv, disp_buf[0]);
       }
    }
-   callListEndShim(disp_buf);
+   disp_buf[0].buffer();
 }
 
 // determines how quads and their level lines are drawn
@@ -1480,7 +1477,7 @@ const int split_quads = 1;
 void VisualizationSceneSolution::PrepareFlat2()
 {
    int i, j, k;
-   callListBeginShim(displlist, disp_buf);
+   disp_buf[2].clear();
    int ne = mesh -> GetNE();
    DenseMatrix pointmat, pts3d, normals;
    Vector values;
@@ -1508,8 +1505,7 @@ void VisualizationSceneSolution::PrepareFlat2()
       }
       j = (j != 0) ? 2 : 0;
       RemoveFPErrors(pts3d, values, normals, sides, RG, fRG);
-      DrawPatch(sides == 3 ? disp_buf[GL_TRIANGLES] : disp_buf[GL_QUADS],
-                pts3d, values, normals, sides, fRG, minv, maxv, j);
+      DrawPatch(disp_buf[2], pts3d, values, normals, sides, fRG, minv, maxv, j);
 #else
       for (k = 0; k < RG.Size()/sides; k++)
       {
@@ -1577,7 +1573,7 @@ void VisualizationSceneSolution::PrepareFlat2()
       }
 #endif
    }
-   callListEndShim(disp_buf);
+   disp_buf[2].buffer();
 }
 
 void VisualizationSceneSolution::Prepare()
@@ -1603,7 +1599,8 @@ void VisualizationSceneSolution::Prepare()
 
    int i, j;
 
-   callListBeginShim(displlist, disp_buf);
+   disp_buf[1].clear();
+   gl3::PolyBuilder poly = disp_buf[1].createPolyBuilder();
    int ne = mesh -> GetNE();
    int nv = mesh -> GetNV();
    DenseMatrix pointmat;
@@ -1669,43 +1666,28 @@ void VisualizationSceneSolution::Prepare()
                   shape = GL_QUADS;
                   break;
             }
-#ifndef GLVIS_OGL3
-            glBegin(shape);
-#endif
+            poly.glBegin(shape);
             mesh->GetPointMatrix (i, pointmat);
             mesh->GetElementVertices (i, vertices);
 
             for (j = 0; j < pointmat.Size(); j++)
             {
-               gl3::GlVertex v;
                double z = LogVal((*sol)(vertices[j]));
-               v.pos[0] = pointmat(0,j);
-               v.pos[1] = pointmat(1,j);
-               v.pos[2] = z;
-               v.norm[0] = nx(vertices[j]);
-               v.norm[1] = ny(vertices[j]);
-               v.norm[2] = nz(vertices[j]);
-#ifdef GLVIS_OGL3
                float rgba[4];
                float texCoord = MySetColor(z, minv, maxv, rgba);
                if (GetUseTexture()) {
-                   disp_buf[shape].addVertex(v, texCoord);
+                   poly.glTexCoord1f(texCoord);
                } else {
-                   disp_buf[shape].addVertex(v, rgba);
+                   poly.glColor4fv(rgba);
                }
-#else
-               MySetColor(z, minv, maxv);
-               glNormal3f((const float*) v.norm[0],(const float*) v.norm[1],(const float*) v.norm[2]);
-               glVertex3f((const float*) v.pos[0],(const float*) v.pos[1],(const float*) v.pos[2]);
-#endif
+               poly.glNormal3d(nx(vertices[j]), ny(vertices[j]), nz(vertices[j]));
+               poly.glVertex3d(pointmat(0, j), pointmat(1, j), z);
             }
-#ifndef GLVIS_OGL3
-            glEnd();
-#endif
+            poly.glEnd();
          }
       }
    }
-   callListEndShim(disp_buf);
+   disp_buf[1].buffer();
 }
 
 void VisualizationSceneSolution::PrepareLevelCurves()
@@ -1721,8 +1703,8 @@ void VisualizationSceneSolution::PrepareLevelCurves()
    Vector values;
    DenseMatrix pointmat;
 
-   callListBeginShim(lcurvelist, lcurve_buf);
-   gl3::LineBuilder build = lcurve_buf.createBuilder();
+   lcurve_buf.clear();
+   gl3::LineBuilder build = lcurve_buf.createLineBuilder();
    for (int i = 0; i < mesh->GetNE(); i++)
    {
       mesh->GetElementVertices(i, vertices);
@@ -1736,7 +1718,7 @@ void VisualizationSceneSolution::PrepareLevelCurves()
       RG.SetSize(vertices.Size());
       DrawLevelCurves(build, RG, pointmat, values, vertices.Size(), level);
    }
-   callListEndShim(lcurve_buf);
+   lcurve_buf.buffer();
 }
 
 void VisualizationSceneSolution::DrawLevelCurves(
@@ -1825,8 +1807,8 @@ void VisualizationSceneSolution::PrepareLevelCurves2()
    DenseMatrix pointmat;
    RefinedGeometry *RefG;
 
-   callListBeginShim(lcurvelist, lcurve_buf);
-   gl3::LineBuilder build = lcurve_buf.createBuilder();
+   lcurve_buf.clear();
+   gl3::LineBuilder build = lcurve_buf.createLineBuilder();
    for (i = 0; i < ne; i++)
    {
       RefG = GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
@@ -1837,8 +1819,7 @@ void VisualizationSceneSolution::PrepareLevelCurves2()
 
       DrawLevelCurves(build, RG, pointmat, values, sides, level);
    }
-
-   callListEndShim(lcurve_buf);
+   lcurve_buf.buffer();
 }
 
 void VisualizationSceneSolution::PrepareLines()
@@ -1854,8 +1835,8 @@ void VisualizationSceneSolution::PrepareLines()
    DenseMatrix pointmat;
    Array<int> vertices;
 
-   callListBeginShim(linelist, line_buf);
-   gl3::LineBuilder lb = line_buf.createBuilder();
+   line_buf.clear();
+   gl3::LineBuilder lb = line_buf.createLineBuilder();
 
    for (i = 0; i < ne; i++)
    {
@@ -1871,7 +1852,7 @@ void VisualizationSceneSolution::PrepareLines()
       lb.glEnd();
    }
 
-   callListEndShim(line_buf);
+   line_buf.buffer();
 }
 
 double VisualizationSceneSolution::GetElementLengthScale(int k)
@@ -1929,7 +1910,7 @@ void VisualizationSceneSolution::PrepareElementNumbering()
 
 void VisualizationSceneSolution::PrepareElementNumbering1()
 {
-   callListBeginShim(e_nums_list, e_nums_buf);
+   e_nums_buf.clear();
 
    DenseMatrix pointmat;
    Array<int> vertices;
@@ -1963,7 +1944,7 @@ void VisualizationSceneSolution::PrepareElementNumbering1()
       DrawNumberedMarker(xx,dx,k,e_nums_buf);
    }
 
-   callListEndShim(e_nums_buf);
+   e_nums_buf.buffer();
 }
 
 void VisualizationSceneSolution::PrepareElementNumbering2()
@@ -1972,7 +1953,7 @@ void VisualizationSceneSolution::PrepareElementNumbering2()
    DenseMatrix pointmat;
    Vector values;
 
-   callListBeginShim(e_nums_list, e_nums_buf);
+   e_nums_buf.clear();
 
    int ne = mesh->GetNE();
    for (int i = 0; i < ne; i++)
@@ -1994,7 +1975,7 @@ void VisualizationSceneSolution::PrepareElementNumbering2()
       DrawNumberedMarker(xx,dx,i,e_nums_buf);
    }
 
-   callListEndShim(e_nums_buf);
+   e_nums_buf.buffer();
 }
 
 void VisualizationSceneSolution::PrepareVertexNumbering()
@@ -2021,7 +2002,7 @@ void VisualizationSceneSolution::PrepareVertexNumbering()
 
 void VisualizationSceneSolution::PrepareVertexNumbering1()
 {
-   callListBeginShim(v_nums_list, v_nums_buf);
+   v_nums_buf.clear();
 
    DenseMatrix pointmat;
    Array<int> vertices;
@@ -2052,7 +2033,7 @@ void VisualizationSceneSolution::PrepareVertexNumbering1()
       }
    }
 
-   callListEndShim(v_nums_buf);
+   v_nums_buf.buffer();
 }
 
 void VisualizationSceneSolution::PrepareVertexNumbering2()
@@ -2061,7 +2042,7 @@ void VisualizationSceneSolution::PrepareVertexNumbering2()
    Vector values;
    Array<int> vertices;
 
-   callListBeginShim(v_nums_list, v_nums_buf);
+   v_nums_buf.clear();
 
    const int ne = mesh->GetNE();
    for (int i = 0; i < ne; i++)
@@ -2090,7 +2071,7 @@ void VisualizationSceneSolution::PrepareVertexNumbering2()
       }
    }
 
-   callListEndShim(v_nums_buf);
+   v_nums_buf.buffer();
 }
 
 void VisualizationSceneSolution::PrepareNumbering()
@@ -2106,8 +2087,8 @@ void VisualizationSceneSolution::PrepareLines2()
    DenseMatrix pointmat;
    RefinedGeometry *RefG;
 
-   callListBeginShim(linelist, line_buf);
-   gl3::LineBuilder lb = line_buf.createBuilder();
+   line_buf.clear();
+   gl3::LineBuilder lb = line_buf.createLineBuilder();
 
    for (i = 0; i < ne; i++)
    {
@@ -2131,7 +2112,7 @@ void VisualizationSceneSolution::PrepareLines2()
       }
    }
 
-   callListEndShim(line_buf);
+   line_buf.buffer();
 }
 
 void VisualizationSceneSolution::PrepareLines3()
@@ -2141,8 +2122,8 @@ void VisualizationSceneSolution::PrepareLines3()
    DenseMatrix pointmat;
    RefinedGeometry *RefG;
 
-   callListBeginShim(linelist, line_buf);
-   gl3::LineBuilder lb = line_buf.createBuilder();
+   line_buf.clear();
+   gl3::LineBuilder lb = line_buf.createLineBuilder();
 
    for (i = 0; i < ne; i++)
    {
@@ -2165,7 +2146,7 @@ void VisualizationSceneSolution::PrepareLines3()
       lb.glEnd();
    }
 
-   callListEndShim(line_buf);
+   line_buf.buffer();
 }
 
 void VisualizationSceneSolution::UpdateValueRange(bool prepare)
@@ -2198,8 +2179,8 @@ void VisualizationSceneSolution::PrepareBoundary()
    Array<int> vertices;
    DenseMatrix pointmat;
 
-   callListBeginShim(bdrlist, bdr_buf);
-   gl3::LineBuilder bl = bdr_buf.createBuilder();
+   bdr_buf.clear();
+   gl3::LineBuilder bl = bdr_buf.createLineBuilder();
    if (shading != 2)
    {
       bl.glBegin(GL_LINES);
@@ -2257,7 +2238,7 @@ void VisualizationSceneSolution::PrepareBoundary()
       shrink = shr;
    }
 
-   callListEndShim(bdr_buf);
+   bdr_buf.buffer();
 }
 
 void VisualizationSceneSolution::PrepareCP()
@@ -2271,8 +2252,8 @@ void VisualizationSceneSolution::PrepareCP()
       return;
    }
 
-   callListBeginShim(cp_list, cp_buf);
-   gl3::LineBuilder bld = cp_buf.createBuilder();
+   cp_buf.clear();
+   gl3::LineBuilder bld = cp_buf.createLineBuilder();
    bld.glBegin(GL_LINES);
 
    if (shading != 2)
@@ -2352,7 +2333,7 @@ void VisualizationSceneSolution::PrepareCP()
    }
 
    bld.glEnd();
-   callListEndShim(cp_buf);
+   cp_buf.buffer();
 }
 
 void VisualizationSceneSolution::DrawCPLine(
@@ -2457,7 +2438,7 @@ void VisualizationSceneSolution::Draw()
           gl->setModeColorTexture();
           glColor4d(1, 1, 1, 1);
       }
-      callListDrawShim(displlist, disp_buf);
+      disp_buf[shading].draw();
       if (GetUseTexture())
       {
          gl->setModeColorTexture();
@@ -2481,7 +2462,7 @@ void VisualizationSceneSolution::Draw()
    {
       glDisable(GL_CLIP_PLANE0);
       DrawRuler(logscale);
-      callListDrawShim(cp_list, cp_buf);
+      cp_buf.draw();
       glEnable(GL_CLIP_PLANE0);
    }
    else
@@ -2493,17 +2474,17 @@ void VisualizationSceneSolution::Draw()
 #endif
    if (drawbdr)
    {
-      callListDrawShim(bdrlist, bdr_buf);
+      bdr_buf.draw();
    }
 
    // draw lines
    if (drawmesh == 1)
    {
-      callListDrawShim(linelist, line_buf);
+      line_buf.draw();
    }
    else if (drawmesh == 2)
    {
-      callListDrawShim(lcurvelist, lcurve_buf);
+      lcurve_buf.draw();
    }
 
    // draw numberings
@@ -2511,11 +2492,11 @@ void VisualizationSceneSolution::Draw()
    {
       if (1 == drawnums)
       {
-         callListDrawShim(e_nums_list, e_nums_buf);
+         e_nums_buf.draw();
       }
       else if (2 == drawnums)
       {
-         callListDrawShim(v_nums_list, v_nums_buf);
+         v_nums_buf.draw();
       }
    }
 #ifndef GLVIS_OGL3
@@ -2527,7 +2508,7 @@ void VisualizationSceneSolution::Draw()
    // draw axes
    if (drawaxes)
    {
-      callListDrawShim(axeslist, axes_buf);
+      axes_buf.draw();
       DrawCoordinateCross();
    }
 
