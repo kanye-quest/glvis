@@ -1365,7 +1365,6 @@ void Cone()
    glEnd();
 }
 
-
 int MySetColorLogscale = 0;
 extern int RepeatPaletteTimes;
 int UseTexture         = 0;
@@ -1549,7 +1548,10 @@ int font_size = 12;
 GlVisFont glvis_font;
 
 GlVisFont * GetFont() {
-    return &glvis_font;
+   if (!glvis_font.isFontLoaded()) {
+       glvis_font.LoadFont("OpenSans.ttf", font_size);
+   }
+   return &glvis_font;
 }
 
 void DrawBitmapText(const char *text, float x, float y, float z)
