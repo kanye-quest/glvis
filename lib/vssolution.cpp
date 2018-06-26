@@ -1345,7 +1345,7 @@ void DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals, 
          {
             if (normals_opt == 0)
             {
-               poly.glNormal3dv(&normals(0, ind[i]));
+               poly.glNormal3dv(na);
                for ( ; j < n; j++)
                {
                   float rgba[4];
@@ -1355,7 +1355,7 @@ void DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals, 
                   } else {
                       poly.glColor4fv(rgba);
                   }
-                  poly.glVertex3dv(&pts(0, ind[i]));
+                  poly.glVertex3dv(&pts(0, ind[i+j]));
                }
             }
             else
@@ -1370,7 +1370,7 @@ void DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals, 
                   } else {
                       poly.glColor4fv(rgba);
                   }
-                  poly.glVertex3dv(&pts(0, ind[i]));
+                  poly.glVertex3dv(&pts(0, ind[i+j]));
                }
             }
          }
