@@ -15,10 +15,11 @@ const std::string vertex_shader_file = _glsl_ver +
 R"(
 precision highp float;
 
-//attribute vec4 gl_Vertex; 
-//attribute vec4 gl_Color; 
-//attribute vec4 gl_Normal; 
-//attribute vec4 gl_MultiTexCoord0; 
+attribute vec3 vertex;
+attribute vec4 color;
+attribute vec3 normal;
+attribute vec4 texCoord0;
+attribute vec4 texCoord1;
  
 uniform mat4 modelViewMatrix; 
 uniform mat4 projectionMatrix; 
@@ -32,12 +33,12 @@ varying vec2 fFontTexCoord;
  
 void main() 
 { 
-    fNormal = normalize(normalMatrix * gl_Normal); 
-    vec4 pos = modelViewMatrix * gl_Vertex; 
+    fNormal = normalize(normalMatrix * normal); 
+    vec4 pos = modelViewMatrix * vec4(vertex, 1.0);
     fPosition = pos.xyz; 
-    fColor = gl_Color; 
-    fTexCoord = gl_MultiTexCoord0.xy; 
-    fFontTexCoord = gl_MultiTexCoord1.xy; 
+    fColor = color; 
+    fTexCoord = texCoord0.xy; 
+    fFontTexCoord = texCoord1.xy; 
     gl_Position = projectionMatrix * pos; 
 })";
 
