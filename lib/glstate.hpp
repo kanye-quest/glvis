@@ -91,7 +91,8 @@ public:
         ATTR_COLOR,
         ATTR_NORMAL,
         ATTR_TEXCOORD0,
-        ATTR_TEXCOORD1
+        ATTR_TEXCOORD1,
+        NUM_ATTRS
     };
 
 protected:
@@ -101,13 +102,18 @@ protected:
 
     int _w;
     int _h;
+
     bool _lighting = false,
          _depthTest = false,
          _blend = false,
          _colorMat = false;
+    float _staticColor[4];
+
     int _numLights;
     float _ambient[4];
-    int _attr_locs[5];
+
+    int _attr_locs[NUM_ATTRS];
+    bool _attr_enabled[NUM_ATTRS];
 
     GLuint locAmb, locDif, locSpec, locShin;
     GLuint locModelView, locProject, locNormal;
@@ -158,6 +164,16 @@ public:
 
     void disableColorMaterial() {
         _colorMat = false;
+    }
+
+    void setStaticColor(float r, float g, float b, float a = 1.0) {
+        _staticColor[0] = r;
+        _staticColor[1] = g;
+        _staticColor[2] = b;
+        _staticColor[3] = a;
+        if (!_attr_enabled[ATTR_COLOR]) {
+            glVertexAttrib4fv(_attr_locs[ATTR_COLOR], _staticColor);
+        }
     }
 
     GlState()
@@ -216,11 +232,18 @@ public:
 
     void enableAttribArray(GlState::shader_attrib attr) {
         glEnableVertexAttribArray(_attr_locs[attr]);
+        _attr_enabled[attr] = true;
     }
 
     //TODO: if color, use glVertexAttrib
     void disableAttribArray(GlState::shader_attrib attr) {
         glDisableVertexAttribArray(_attr_locs[attr]);
+        _attr_enabled[attr] = false;
+        if (attr == ATTR_COLOR) {
+            glVertexAttrib4fv(_attr_locs[ATTR_COLOR], _staticColor);
+        } else if (attr == ATTR_NORMAL) {
+            glVertexAttrib3f(_attr_locs[ATTR_NORMAL], 0.f, 0.f, 1.f);
+        }
     }
 
     /**

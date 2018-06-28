@@ -2386,7 +2386,7 @@ void VisualizationSceneSolution::Draw()
 
    glPolygonOffset (1, 1);
    glEnable (GL_POLYGON_OFFSET_FILL);
-   glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
+   //glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 
 #ifndef GLVIS_OGL3
    glDisable(GL_CLIP_PLANE0);
@@ -2436,7 +2436,7 @@ void VisualizationSceneSolution::Draw()
       if (GetUseTexture())
       {
           gl->setModeColorTexture();
-          glColor4d(1, 1, 1, 1);
+          gl->setStaticColor(1, 1, 1, 1);
       }
       disp_buf[shading].draw();
       if (GetUseTexture())
