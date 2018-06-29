@@ -2388,9 +2388,7 @@ void VisualizationSceneSolution::Draw()
    glEnable (GL_POLYGON_OFFSET_FILL);
    //glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 
-#ifndef GLVIS_OGL3
-   glDisable(GL_CLIP_PLANE0);
-#endif
+   gl->disableClipPlane();
    gl->disableLight();
 
 #if 0
@@ -2411,13 +2409,11 @@ void VisualizationSceneSolution::Draw()
    }
 #endif
 
-#ifndef GLVIS_OGL3
    if (draw_cp)
    {
-      glClipPlane(GL_CLIP_PLANE0, CuttingPlane->Equation());
-      glEnable(GL_CLIP_PLANE0);
+      gl->setClipPlane(CuttingPlane->Equation());
+      gl->enableClipPlane();
    }
-#endif
 
    Set_Material();
    if (light)
@@ -2499,12 +2495,10 @@ void VisualizationSceneSolution::Draw()
          v_nums_buf.draw();
       }
    }
-#ifndef GLVIS_OGL3
    if (draw_cp)
    {
-      glDisable(GL_CLIP_PLANE0);
+      gl->disableClipPlane();
    }
-#endif
    // draw axes
    if (drawaxes)
    {

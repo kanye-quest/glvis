@@ -18,6 +18,7 @@
 
 #include <glm/mat4x4.hpp>
 #include <glm/vec3.hpp>
+#include <glm/gtc/matrix_access.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -88,6 +89,7 @@ public:
 
     enum shader_attrib {
         ATTR_VERTEX,
+        ATTR_TEXT_VERTEX,
         ATTR_COLOR,
         ATTR_NORMAL,
         ATTR_TEXCOORD0,
@@ -103,24 +105,33 @@ protected:
     int _w;
     int _h;
 
+    //client state variables
     bool _lighting = false,
          _depthTest = false,
          _blend = false,
-         _colorMat = false;
+         _colorMat = false,
+         _clipPlane = false;
     float _staticColor[4];
 
+    //lighting uniforms
     int _numLights;
     float _ambient[4];
 
+    glm::vec4 _clip_plane;
+    GlMatrix _projection_cp;
+
+    //shader locations
     int _attr_locs[NUM_ATTRS];
     bool _attr_enabled[NUM_ATTRS];
 
+    GLuint locUseClipPlane, locClipPlane;
     GLuint locAmb, locDif, locSpec, locShin;
-    GLuint locModelView, locProject, locNormal;
+    GLuint locModelView, locProject, locProjectText, locNormal;
 
     glm::vec3 getRasterPoint(double x, double y, double z) {
         return glm::project(glm::vec3(x, y, z), modelView.mtx, projection.mtx, glm::vec4(0, 0, _w, _h));
     }
+
 public:
     GlMatrix modelView;
     GlMatrix projection;
@@ -158,12 +169,28 @@ public:
     /**
      * Sets the ambient and diffuse lighting to full intensity, tracking the object color.
      */
-    void enableColorMaterial() {
-        _colorMat = true;
+    void enableColorMaterial() { _colorMat = true; }
+
+    void disableColorMaterial() { _colorMat = false; }
+
+    void enableClipPlane() {
+        if (!_clipPlane) {
+            glUniform1i(locUseClipPlane, GL_TRUE); 
+            _clipPlane = true;
+        }
     }
 
-    void disableColorMaterial() {
-        _colorMat = false;
+    void disableClipPlane() {
+        if (_clipPlane) {
+            glUniform1i(locUseClipPlane, GL_FALSE);
+            _clipPlane = false;
+        }
+    }
+
+    void setClipPlane(const double * eqn) {
+        _clip_plane = glm::vec4(eqn[0], eqn[1], eqn[2], eqn[3]);
+        _clip_plane = glm::inverseTranspose(modelView.mtx) * _clip_plane;
+        glUniform4fv(locClipPlane, 1, glm::value_ptr(_clip_plane));
     }
 
     void setStaticColor(float r, float g, float b, float a = 1.0) {
@@ -193,38 +220,8 @@ public:
 
     /**
      * Initializes samplers and uniforms in the shader pipeline.
-     * Texture unit 0 holds the color palettes, while texture unit 1 holds the
-     * font atlas.
      */
-    void initShaderState() {
-        _attr_locs[ATTR_VERTEX] = glGetAttribLocation(program, "vertex");
-        _attr_locs[ATTR_COLOR] = glGetAttribLocation(program, "color");
-        _attr_locs[ATTR_NORMAL] = glGetAttribLocation(program, "normal");
-        _attr_locs[ATTR_TEXCOORD0] = glGetAttribLocation(program, "texCoord0");
-        _attr_locs[ATTR_TEXCOORD1] = glGetAttribLocation(program, "texCoord1");
-
-        locModelView = glGetUniformLocation(program, "modelViewMatrix");
-        locProject = glGetUniformLocation(program, "projectionMatrix");
-        locNormal = glGetUniformLocation(program, "normalMatrix");
-
-        locAmb = glGetUniformLocation(program, "material.ambient");
-        locDif = glGetUniformLocation(program, "material.diffuse");
-        locSpec = glGetUniformLocation(program, "material.specular");
-        locShin = glGetUniformLocation(program, "material.shininess");
-
-        GLuint locColorTex = glGetUniformLocation(program, "colorTex");
-        GLuint locFontTex = glGetUniformLocation(program, "fontTex");
-        glUniform1i(locColorTex, 0);
-        glUniform1i(locFontTex, 1);
-        GLuint locContainsText = glGetUniformLocation(program, "containsText");
-        glUniform1i(locContainsText, GL_FALSE);
-        GLuint locUseColorTex = glGetUniformLocation(program, "useColorTex");
-        glUniform1i(locUseColorTex, GL_FALSE);
-        _shaderMode = RENDER_COLOR;
-        modelView.identity();
-        projection.identity();
-        loadMatrixUniforms();
-    }
+    void initShaderState();
 
     int getAttribLoc(GlState::shader_attrib attr) {
         return _attr_locs[attr];
@@ -250,20 +247,15 @@ public:
      * Loads the current model-view and projection matrix into the shader.
      */
     void loadMatrixUniforms(bool viewportChange = false) {
-        if (viewportChange && _shaderMode != RENDER_TEXT)
-            return; //we only need to update projective uniform if text is being rendered
-        if (_shaderMode != RENDER_TEXT) {
-            // standard 3d view
-            glUniformMatrix4fv(locModelView, 1, GL_FALSE, glm::value_ptr(modelView.mtx));
-            glUniformMatrix4fv(locProject, 1, GL_FALSE, glm::value_ptr(projection.mtx));
-            glm::mat3 normal(modelView.mtx);
-            normal = glm::inverseTranspose(normal);
-            glUniformMatrix3fv(locNormal, 1, GL_FALSE, glm::value_ptr(normal));
-        } else {
-            // 2d view
+        if (viewportChange) {
             glm::mat4 proj2d = glm::ortho<float>(0, _w, 0, _h, -5.0, 5.0);
-            glUniformMatrix4fv(locProject, 1, GL_FALSE, glm::value_ptr(proj2d));
+            glUniformMatrix4fv(locProjectText, 1, GL_FALSE, glm::value_ptr(proj2d));
         }
+        glUniformMatrix4fv(locModelView, 1, GL_FALSE, glm::value_ptr(modelView.mtx));
+        glUniformMatrix4fv(locProject, 1, GL_FALSE, glm::value_ptr(projection.mtx));
+        glm::mat3 normal(modelView.mtx);
+        normal = glm::inverseTranspose(normal);
+        glUniformMatrix3fv(locNormal, 1, GL_FALSE, glm::value_ptr(normal));
     }
 
     /**
@@ -373,19 +365,16 @@ public:
      */
     void setModeRenderText(double x, double y, double z) {
         setModeRenderText();
-        //need to recalculate model view if raster point changes
-        loadMatrixUniforms();
-        glm::mat4 mv2d = glm::translate(glm::mat4(1.0), getRasterPoint(x, y, z));
-        glUniformMatrix4fv(locModelView, 1, GL_FALSE, glm::value_ptr(mv2d));
+        disableAttribArray(ATTR_VERTEX);
+        glVertexAttrib3f(_attr_locs[ATTR_VERTEX], x, y, z);
     }
 
     /**
-     * Prepares the shader pipeline for text rendering, without setting the
-     * uniform matrices.
+     * Prepares the shader pipeline for text rendering.
      */
     void setModeRenderText() {
         if (_shaderMode != RENDER_TEXT) {
-            glDisable(GL_DEPTH_TEST);
+            //glDisable(GL_DEPTH_TEST);
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             GLuint locContainsText = glGetUniformLocation(program, "containsText");

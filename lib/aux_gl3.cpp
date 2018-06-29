@@ -229,10 +229,10 @@ TextBuffer::TextBuffer(float x, float y, float z, std::string& text) noexcept
 void TextBuffer::drawObject() {
     GetGlState()->setModeRenderText(rast_x, rast_y, rast_z);
     
-    int loc_vtx = GetGlState()->getAttribLoc(GlState::ATTR_VERTEX);
+    int loc_vtx = GetGlState()->getAttribLoc(GlState::ATTR_TEXT_VERTEX);
     int loc_tex = GetGlState()->getAttribLoc(GlState::ATTR_TEXCOORD1);
 
-    GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
+    GetGlState()->enableAttribArray(GlState::ATTR_TEXT_VERTEX);
     GetGlState()->enableAttribArray(GlState::ATTR_TEXCOORD1);
     
     glBindBuffer(GL_ARRAY_BUFFER, *_handle);
@@ -242,7 +242,7 @@ void TextBuffer::drawObject() {
     glVertexAttribPointer(loc_tex, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 4, (void*)(sizeof(float) * 2));
     glDrawArrays(GL_TRIANGLES, 0, size); 
     
-    GetGlState()->disableAttribArray(GlState::ATTR_VERTEX);
+    GetGlState()->disableAttribArray(GlState::ATTR_TEXT_VERTEX);
     GetGlState()->disableAttribArray(GlState::ATTR_TEXCOORD1);
     GetGlState()->setModeColor();
 }
