@@ -400,10 +400,11 @@ public:
      */
     void addQuad(const double (&vtx)[4][3], double (&norm)[3], float (&rgba)[4][4]) {
         float fnorm[3] = { (float) norm[0], (float) norm[1], (float) norm[2] };
-        for (int i = 0; i < 4; i++) {
+        int indices[] = {0, 1, 2, 0, 2, 3};
+        for (int i : indices) {
             float fvert[3] = { (float) vtx[i][0], (float) vtx[i][1], (float) vtx[i][2] };
             getBuffer(VertexBuffer::LAYOUT_VTX_NORMAL_COLOR,
-                  GL_QUADS).addVertex(fvert, fnorm, rgba[i]);
+                  GL_TRIANGLES).addVertex(fvert, fnorm, rgba[i]);
         }
     }
 
@@ -413,10 +414,11 @@ public:
      */
     void addQuad(const double (&vtx)[4][3], double (&norm)[3], float (&texcoord)[4]) {
         float fnorm[3] = { (float) norm[0], (float) norm[1], (float) norm[2] };
-        for (int i = 0; i < 4; i++) {
+        int indices[] = {0, 1, 2, 0, 2, 3};
+        for (int i : indices) {
             float fvert[3] = { (float) vtx[i][0], (float) vtx[i][1], (float) vtx[i][2] };
             getBuffer(VertexBuffer::LAYOUT_VTX_NORMAL_TEXTURE0,
-                  GL_QUADS).addVertex(fvert, fnorm, texcoord[i]);
+                  GL_TRIANGLES).addVertex(fvert, fnorm, texcoord[i]);
         }
     }
 

@@ -114,10 +114,19 @@ void PolyBuilder::glEnd() {
         cerr << "Type is not implemented" << endl;
         return;
     }
-    VertexBuffer& toInsert = parent_buf->getBuffer(dst_layout, render_as);
-    toInsert._pt_data.insert(toInsert._pt_data.end(),
+    VertexBuffer& toInsert = parent_buf->getBuffer(dst_layout, GL_TRIANGLES);
+    if (render_as == GL_QUADS) {
+        while (!pts.empty()) {
+            toInsert._pt_data.insert(toInsert._pt_data.end(), pts.begin(), pts.begin() + pts_stride * 3);
+            toInsert._pt_data.insert(toInsert._pt_data.end(), pts.begin(), pts.begin() + pts_stride);
+            toInsert._pt_data.insert(toInsert._pt_data.end(), pts.begin() + pts_stride * 2, pts.begin() + pts_stride * 4);
+            pts.erase(pts.begin(), pts.begin() + pts_stride * 4);
+        }
+    } else {
+        toInsert._pt_data.insert(toInsert._pt_data.end(),
                                  std::make_move_iterator(pts.begin()),
                                  std::make_move_iterator(pts.end()));
+    }
     pts.clear();
     count = 0;
 #else
@@ -204,12 +213,7 @@ void VertexBuffer::drawObject(GLenum renderAs) {
             GetGlState()->enableAttribArray(GlState::ATTR_TEXCOORD0);
             //glTexCoordPointer(2, GL_FLOAT, sizeof(float) * 8, (void*)(sizeof(float) * 6));
             glVertexAttribPointer(loc_tex, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 6));
-            if (renderAs == GL_QUADS) {
-                for (uint32_t i = 0; i < _buffered_size / 32; i++)
-                    glDrawArrays(GL_TRIANGLE_FAN, 4*i, 4);
-            } else {
-                glDrawArrays(renderAs, 0, _buffered_size / 8);
-            }
+            glDrawArrays(renderAs, 0, _buffered_size / 8);
             GetGlState()->disableAttribArray(GlState::ATTR_TEXCOORD0);
             GetGlState()->disableAttribArray(GlState::ATTR_NORMAL);
             break;
