@@ -2375,7 +2375,6 @@ void VisualizationSceneSolution::DrawCPLine(
 
 void VisualizationSceneSolution::Draw()
 {
-    cerr << "VSSolution::Draw()" << endl;
    gl->enableDepthTest();
 
    Set_Background();

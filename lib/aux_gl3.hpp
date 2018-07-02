@@ -326,41 +326,56 @@ public:
 
 class TextBuffer {
 private:
+    struct _entry {
+        float rx, ry, rz;
+        std::string text;
+        _entry() = default;
+        _entry(float x, float y, float z, std::string txt)
+            : rx(x), ry(y), rz(z), text(txt) { }
+    };
+
     std::unique_ptr<GLuint> _handle;
-    std::vector<float> _pt_data;
-    float rast_x, rast_y, rast_z;
-    size_t size;
+    std::vector<_entry> _data;
+    size_t _size;
 public:
-    TextBuffer(float x, float y, float z, std::string& text) noexcept;
+    TextBuffer() : _handle(new GLuint(0)) { };
     ~TextBuffer() {
         if (_handle)
             glDeleteBuffers(1, _handle.get());
     }
 
-    TextBuffer(TextBuffer&&) = default;
-    TextBuffer& operator = (TextBuffer&&) = default;
+    void addText(float x, float y, float z, std::string& text) {
+        _data.emplace_back(x, y, z, text);
+    }
+
+    void bufferData();
 
     /**
      * Draws the text.
      */
     void drawObject();
+
+    void clear() {
+        _data.clear();
+        _size = 0;
+    }
 };
 
 class GlDrawable {
 private:
     std::unordered_map<GLenum, VertexBuffer> buffers[6];
-    std::vector<TextBuffer> text_buffers;
+    TextBuffer text_buffer;
 public:
 
     /**
      * Adds a string at the given position in object coordinates.
      */
     void addText(float x, float y, float z, std::string&& text) {
-        text_buffers.emplace_back(x, y, z, text);
+        text_buffer.addText(x, y, z, text);
     }
 
     void addText(float x, float y, float z, std::string& text) {
-        text_buffers.emplace_back(x, y, z, text);
+        text_buffer.addText(x, y, z, text);
     }
 
     void addLines(std::vector<float>&& in_move) {
@@ -458,7 +473,7 @@ public:
                 pair.second.clear();
             }
         }
-        text_buffers.clear();
+        text_buffer.clear();
     }
     
     /**
@@ -470,6 +485,7 @@ public:
                 pair.second.bufferData();
             }
         }
+        text_buffer.bufferData();
     }
 
     /**
@@ -481,9 +497,7 @@ public:
                 pair.second.drawObject(pair.first);
             }
         }
-        for (auto& text : text_buffers) {
-            text.drawObject();
-        }
+        text_buffer.drawObject();
     }
 };
 
