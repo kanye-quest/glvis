@@ -116,6 +116,41 @@ int main()
             vs->Zoom(1.8);
          }
       }
+      else if (mesh->SpaceDimension() == 3)
+      {
+         VisualizationSceneSolution3d *vss;
+         vs = vss = new VisualizationSceneSolution3d(*mesh, sol);
+         if (grid_f)
+         {
+            vss->SetGridFunction(grid_f);
+         }
+         if (field_type == 2)
+         {
+            if (mesh->Dimension() == 3)
+            {
+               paletteSet(4);
+               // paletteSet(11);
+               // Set_Material_And_Light(4,3);
+            }
+            else
+            {
+               paletteSet(4);
+            }
+            vss->ToggleDrawAxes();
+            vss->ToggleDrawMesh();
+         }
+      }
+      if (field_type == 2)
+      {
+         if (grid_f)
+         {
+            mesh_range = grid_f->Max() + 1.0;
+         }
+         else
+         {
+            mesh_range = sol.Max() + 1.0;
+         }
+      }
    }
 
     if (vs)
