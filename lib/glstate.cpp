@@ -127,7 +127,6 @@ void main()
     } 
 })";
 
-
 bool GlState::compileShaders() {
     GLuint vtx_shader = glCreateShader(GL_VERTEX_SHADER);
     GLuint frag_shader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -163,6 +162,8 @@ bool GlState::compileShaders() {
         return false;
     }
     program = glCreateProgram();
+    //for OSX, attrib 0 must be bound to render an object
+    glBindAttribLocation(program, 0, "vertex");
     glAttachShader(program, vtx_shader);
     glAttachShader(program, frag_shader);
 

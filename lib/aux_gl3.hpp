@@ -208,6 +208,7 @@ public:
 #endif
     }
     void glVertex3d(double x, double y, double z);
+    void glVertex3dv(double * v) { glVertex3d(v[0], v[1], v[2]); }
     void glColor3f(float r, float g, float b);
     void glColor4fv(float * color);
 
@@ -422,6 +423,21 @@ public:
                   GL_TRIANGLES).addVertex(fvert, fnorm, rgba[i]);
         }
     }
+
+    /**
+     * Adds a quadrilateral to the drawable object, with the specified face normal
+     * and color.
+     */
+    void addQuadFace(const double (&vtx)[4][3], double (&norm)[3], float (&rgba)[4]) {
+        float fnorm[3] = { (float) norm[0], (float) norm[1], (float) norm[2] };
+        int indices[] = {0, 1, 2, 0, 2, 3};
+        for (int i : indices) {
+            float fvert[3] = { (float) vtx[i][0], (float) vtx[i][1], (float) vtx[i][2] };
+            getBuffer(VertexBuffer::LAYOUT_VTX_NORMAL_COLOR,
+                  GL_TRIANGLES).addVertex(fvert, fnorm, rgba);
+        }
+    }
+
 
     /**
      * Adds a quadrilateral to the drawable object, with the specified face normal
