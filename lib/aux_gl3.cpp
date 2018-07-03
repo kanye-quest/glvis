@@ -33,6 +33,7 @@ void LineBuilder::glVertex3d(double x, double y, double z) {
     if (has_color && !has_stipple) {
         pts.insert(pts.end(), color, color + 4);
     }
+    pts.push_back(0);
     count++;
 #else
     ::glVertex3d(x, y, z);
@@ -69,7 +70,7 @@ void LineBuilder::glEnd() {
         return;
     }
     if (render_as == GL_LINE_LOOP) {
-        int offset = (has_color && !has_stipple) ? 7 : 3;
+        int offset = (has_color && !has_stipple) ? 8 : 4;
         //connect first and last points
         pts.reserve(offset * 2 + pts.size());
         std::copy_n(pts.end() - offset, offset, std::back_inserter(pts));
@@ -175,8 +176,8 @@ void VertexBuffer::drawObject(GLenum renderAs) {
     switch (_layout) {
         case LAYOUT_VTX:
             //glVertexPointer(3, GL_FLOAT, 0, 0);
-            glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, 0, 0);
-            glDrawArrays(renderAs, 0, _buffered_size / 3);
+            glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 4, 0);
+            glDrawArrays(renderAs, 0, _buffered_size / 4);
             break;
         case LAYOUT_VTX_NORMAL:
             //glVertexPointer(3, GL_FLOAT, sizeof(float) * 6, 0);
@@ -189,10 +190,10 @@ void VertexBuffer::drawObject(GLenum renderAs) {
             break;
         case LAYOUT_VTX_COLOR:
             //glVertexPointer(3, GL_FLOAT, sizeof(float) * 7, 0);
-            glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 7, 0);
+            glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, 0);
             GetGlState()->enableAttribArray(GlState::ATTR_COLOR);
             //glColorPointer(4, GL_FLOAT, sizeof(float) * 7, (void*)(sizeof(float) * 3));
-            glVertexAttribPointer(loc_color, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 7, (void*)(sizeof(float) * 3));
+            glVertexAttribPointer(loc_color, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 3));
             glDrawArrays(renderAs, 0, _buffered_size / 7);
             GetGlState()->disableAttribArray(GlState::ATTR_COLOR);
             break;

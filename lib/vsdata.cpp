@@ -364,12 +364,12 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
                GL_TRIANGLES,
                gl3::VertexBuffer::LAYOUT_VTX_COLOR,
                {
-                   minx, Y_lo, posz, rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0,
-                   maxx, Y_lo, posz, rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0,
-                   maxx, Y_hi, posz, rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0,
-                   minx, Y_hi, posz, rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0,
-                   minx, Y_lo, posz, rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0,
-                   maxx, Y_hi, posz, rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0,
+                   minx, Y_lo, posz, rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0, 0.0,
+                   maxx, Y_lo, posz, rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0, 0.0,
+                   maxx, Y_hi, posz, rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0, 0.0,
+                   minx, Y_hi, posz, rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0, 0.0,
+                   minx, Y_lo, posz, rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0, 0.0,
+                   maxx, Y_hi, posz, rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0, 0.0,
                });
        }
    }
@@ -381,20 +381,20 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
            GL_LINES,
            gl3::VertexBuffer::LAYOUT_VTX,
            {
-               minx, miny, posz, maxx, miny, posz,
-               maxx, miny, posz, maxx, maxy, posz,
-               maxx, maxy, posz, minx, maxy, posz,
-               minx, maxy, posz, minx, miny, posz
+               minx, miny, posz, 0.0, maxx, miny, posz, 0.0,
+               maxx, miny, posz, 0.0, maxx, maxy, posz, 0.0,
+               maxx, maxy, posz, 0.0, minx, maxy, posz, 0.0,
+               minx, maxy, posz, 0.0, minx, miny, posz, 0.0,
            });
    } else if (border == 2) {
        color_bar.addShape(
            GL_LINES,
            gl3::VertexBuffer::LAYOUT_VTX,
            {
-               minx, miny, posz,
-               maxx, miny, posz,
-               maxx, maxy, posz,
-               minx, maxy, posz,
+               minx, miny, posz, 0.0,
+               maxx, miny, posz, 0.0,
+               maxx, maxy, posz, 0.0,
+               minx, maxy, posz, 0.0,
            });
    }
 
@@ -405,7 +405,7 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
          float Y = miny + (maxy - miny) * LogUVal((*levels)[i]);
          color_bar.addShape(
              GL_LINES, gl3::VertexBuffer::LAYOUT_VTX,
-             {minx, Y, posz, maxx, Y, posz});
+             {minx, Y, posz, 0.0, maxx, Y, posz, 0.0});
       }
    }
    if (level)
@@ -415,7 +415,7 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
          float Y = miny + (maxy - miny) * LogUVal((*level)[i]);
          color_bar.addShape(
              GL_LINES, gl3::VertexBuffer::LAYOUT_VTX,
-             {minx, Y, posz, maxx, Y, posz});
+             {minx, Y, posz, 0.0, maxx, Y, posz, 0.0});
       }
    }
 
