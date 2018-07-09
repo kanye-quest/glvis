@@ -686,9 +686,9 @@ void VisualizationSceneScalarData::DrawCoordinateCross()
 
        coord_cross.addLines(
            {
-              0, 0, 0, 0, 0, 0.9,
-              0, 0, 0, 0, 0.9, 0,
-              0, 0, 0, 0.9, 0, 0
+              0, 0, 0, 0, 0, 0, 0.9, 0,
+              0, 0, 0, 0, 0, 0.9, 0, 0,
+              0, 0, 0, 0, 0.9, 0, 0, 0
            });
        coord_cross.addShape(
            GL_TRIANGLES,

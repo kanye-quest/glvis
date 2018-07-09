@@ -241,7 +241,7 @@ void SdlWindow::mainLoop() {
     emscripten_set_main_loop_arg([](void* arg) {
                                         if(((SdlWindow*) arg)->mainIter())
                                             SDL_GL_SwapWindow(((SdlWindow*) arg)->_handle->hwnd);
-                                    }, this, 60, 1);
+                                    }, this, 0, 1);
 #else
     while (running) {
         bool glSwap = mainIter();

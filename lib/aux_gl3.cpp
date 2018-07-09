@@ -19,7 +19,7 @@ using namespace gl3;
 
 void LineBuilder::glVertex3d(double x, double y, double z) {
 #ifdef GLVIS_OGL3
-    int offset = (has_color && !has_stipple) ? 7 : 3;
+    int offset = (has_color && !has_stipple) ? 8 : 4;
     if (count >= 2 && (render_as == GL_LINE_STRIP || render_as == GL_LINE_LOOP)) {
         pts.reserve(offset * 2 + pts.size());
         //append last-inserted point
@@ -194,7 +194,7 @@ void VertexBuffer::drawObject(GLenum renderAs) {
             GetGlState()->enableAttribArray(GlState::ATTR_COLOR);
             //glColorPointer(4, GL_FLOAT, sizeof(float) * 7, (void*)(sizeof(float) * 3));
             glVertexAttribPointer(loc_color, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 3));
-            glDrawArrays(renderAs, 0, _buffered_size / 7);
+            glDrawArrays(renderAs, 0, _buffered_size / 8);
             GetGlState()->disableAttribArray(GlState::ATTR_COLOR);
             break;
         case LAYOUT_VTX_TEXTURE0:
