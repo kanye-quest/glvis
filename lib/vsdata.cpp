@@ -1195,7 +1195,7 @@ void VisualizationSceneScalarData::DrawRuler(bool log_z)
    if (ruler_on)
    {
       gl3::GlDrawable ruler, ruler_lines;
-      gl3::LineBuilder line = ruler_lines.createLineBuilder();
+      gl3::GlBuilder line = ruler_lines.createBuilder();
       double pos_z = LogVal(ruler_z, log_z);
       if (ruler_on == 2)
       {
@@ -1483,7 +1483,7 @@ void VisualizationSceneScalarData::PrepareAxes()
    GLfloat blk[4] = {blk_val, blk_val, blk_val, 1.0};
    axes_buf.clear();
    
-   gl3::LineBuilder bld = axes_buf.createLineBuilder(true);
+   gl3::GlBuilder bld = axes_buf.createBuilder();
    if (drawaxes == 3)
    {
       //glLineStipple(1, 255);
@@ -1497,8 +1497,8 @@ void VisualizationSceneScalarData::PrepareAxes()
       bld.glVertex3d(x[0], y[0], z[0]);
       bld.glEnd();
       bld.glColor4fv(blk);
-      bld.setUseColor(false);
-      bld.glEnable(GL_LINE_STIPPLE);
+      //bld.setUseColor(false);
+      //bld.glEnable(GL_LINE_STIPPLE);
       bld.glBegin(GL_LINE_STRIP);
       bld.glVertex3d(x[1], y[0], z[0]);
       bld.glVertex3d(x[1], y[1], z[0]);
@@ -1507,7 +1507,7 @@ void VisualizationSceneScalarData::PrepareAxes()
    }
    else
    {
-      bld.setUseColor(false);
+      //bld.setUseColor(false);
       bld.glBegin(GL_LINE_LOOP);
       bld.glVertex3d(x[0], y[0], z[0]);
       bld.glVertex3d(x[1], y[0], z[0]);
@@ -1524,15 +1524,15 @@ void VisualizationSceneScalarData::PrepareAxes()
 
    if (drawaxes == 3)
    {
-      bld.setUseColor(true);
-      bld.glDisable(GL_LINE_STIPPLE);
+      //bld.setUseColor(true);
+      //bld.glDisable(GL_LINE_STIPPLE);
       bld.glBegin(GL_LINES);
       bld.glVertex3d(x[0], y[0], z[1]);
       bld.glColor3f(0., 0., 1.);
       bld.glVertex3d(x[0], y[0], z[0]);
       bld.glEnd();
-      bld.setUseColor(false);
-      bld.glEnable(GL_LINE_STIPPLE);
+      //bld.setUseColor(false);
+      //bld.glEnable(GL_LINE_STIPPLE);
       bld.glColor4fv(blk);
       bld.glBegin(GL_LINES);
    }
@@ -1551,7 +1551,7 @@ void VisualizationSceneScalarData::PrepareAxes()
    bld.glEnd();
    if (drawaxes == 3)
    {
-      bld.glDisable(GL_LINE_STIPPLE);
+      //bld.glDisable(GL_LINE_STIPPLE);
    }
 
    // Write the coordinates of the lower left and upper right corner.
@@ -1626,7 +1626,7 @@ void VisualizationSceneScalarData::DrawPolygonLevelLines(
 }
 
 void VisualizationSceneScalarData::DrawPolygonLevelLines(
-   double * point, int n, Array<double> &level, bool log_vals, gl3::LineBuilder& builder)
+   double * point, int n, Array<double> &level, bool log_vals, gl3::GlBuilder& builder)
 {
    int l, k, k1;
    double curve, t;

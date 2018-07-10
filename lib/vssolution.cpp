@@ -1022,7 +1022,7 @@ void DrawNumberedMarker(const double x[3], double dx, int n)
 
 void DrawNumberedMarker(const double x[3], double dx, int n, gl3::GlDrawable& buff)
 {
-    gl3::LineBuilder bld = buff.createLineBuilder();
+    gl3::GlBuilder bld = buff.createBuilder();
     bld.glBegin(GL_LINES);
     // glColor4f(0, 0, 0, 0);
     bld.glVertex3d(x[0]-dx, x[1]-dx, x[2]);
@@ -1254,7 +1254,7 @@ void DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals, 
 #ifndef GLVIS_OGL3
     DrawPatch(pts, vals, normals, n, ind, minv, maxv, normals_opt);
 #else
-   gl3::PolyBuilder poly = drawable.createPolyBuilder();
+   gl3::GlBuilder poly = drawable.createBuilder();
    double na[3];
 
    if (normals_opt == 1 || normals_opt == -2)
@@ -1385,7 +1385,7 @@ void DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals, 
 void VisualizationSceneSolution::PrepareWithNormals()
 {
    disp_buf[1].clear();
-   gl3::PolyBuilder poly = disp_buf[1].createPolyBuilder();
+   gl3::GlBuilder poly = disp_buf[1].createBuilder();
    Array<int> vertices;
    double *vtx, *nor, val, s;
 
@@ -1600,7 +1600,7 @@ void VisualizationSceneSolution::Prepare()
    int i, j;
 
    disp_buf[1].clear();
-   gl3::PolyBuilder poly = disp_buf[1].createPolyBuilder();
+   gl3::GlBuilder poly = disp_buf[1].createBuilder();
    int ne = mesh -> GetNE();
    int nv = mesh -> GetNV();
    DenseMatrix pointmat;
@@ -1704,7 +1704,7 @@ void VisualizationSceneSolution::PrepareLevelCurves()
    DenseMatrix pointmat;
 
    lcurve_buf.clear();
-   gl3::LineBuilder build = lcurve_buf.createLineBuilder();
+   gl3::GlBuilder build = lcurve_buf.createBuilder();
    for (int i = 0; i < mesh->GetNE(); i++)
    {
       mesh->GetElementVertices(i, vertices);
@@ -1722,7 +1722,7 @@ void VisualizationSceneSolution::PrepareLevelCurves()
 }
 
 void VisualizationSceneSolution::DrawLevelCurves(
-   gl3::LineBuilder& builder, Array<int> &RG, DenseMatrix &pointmat, Vector &values,
+   gl3::GlBuilder& builder, Array<int> &RG, DenseMatrix &pointmat, Vector &values,
    int sides, Array<double> &lvl, int flat)
 {
    double point[4][4];
@@ -1808,7 +1808,7 @@ void VisualizationSceneSolution::PrepareLevelCurves2()
    RefinedGeometry *RefG;
 
    lcurve_buf.clear();
-   gl3::LineBuilder build = lcurve_buf.createLineBuilder();
+   gl3::GlBuilder build = lcurve_buf.createBuilder();
    for (i = 0; i < ne; i++)
    {
       RefG = GLVisGeometryRefiner.Refine(mesh->GetElementBaseGeometry(i),
@@ -1836,7 +1836,7 @@ void VisualizationSceneSolution::PrepareLines()
    Array<int> vertices;
 
    line_buf.clear();
-   gl3::LineBuilder lb = line_buf.createLineBuilder();
+   gl3::GlBuilder lb = line_buf.createBuilder();
 
    for (i = 0; i < ne; i++)
    {
@@ -2088,7 +2088,7 @@ void VisualizationSceneSolution::PrepareLines2()
    RefinedGeometry *RefG;
 
    line_buf.clear();
-   gl3::LineBuilder lb = line_buf.createLineBuilder();
+   gl3::GlBuilder lb = line_buf.createBuilder();
 
    for (i = 0; i < ne; i++)
    {
@@ -2123,7 +2123,7 @@ void VisualizationSceneSolution::PrepareLines3()
    RefinedGeometry *RefG;
 
    line_buf.clear();
-   gl3::LineBuilder lb = line_buf.createLineBuilder();
+   gl3::GlBuilder lb = line_buf.createBuilder();
 
    for (i = 0; i < ne; i++)
    {
@@ -2180,7 +2180,7 @@ void VisualizationSceneSolution::PrepareBoundary()
    DenseMatrix pointmat;
 
    bdr_buf.clear();
-   gl3::LineBuilder bl = bdr_buf.createLineBuilder();
+   gl3::GlBuilder bl = bdr_buf.createBuilder();
    if (shading != 2)
    {
       bl.glBegin(GL_LINES);
@@ -2253,7 +2253,7 @@ void VisualizationSceneSolution::PrepareCP()
    }
 
    cp_buf.clear();
-   gl3::LineBuilder bld = cp_buf.createLineBuilder();
+   gl3::GlBuilder bld = cp_buf.createBuilder();
    bld.glBegin(GL_LINES);
 
    if (shading != 2)
@@ -2337,7 +2337,7 @@ void VisualizationSceneSolution::PrepareCP()
 }
 
 void VisualizationSceneSolution::DrawCPLine(
-   DenseMatrix &pointmat, Vector &values, Array<int> &ind, gl3::LineBuilder& bld)
+   DenseMatrix &pointmat, Vector &values, Array<int> &ind, gl3::GlBuilder& bld)
 {
    int n, js, nv = ind.Size();
    double s, xs, ys;
