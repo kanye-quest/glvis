@@ -1403,18 +1403,18 @@ void MySetColor (gl3::GlBuilder& builder, double val, double min, double max) {
      {
         val = max;
      }
-     MySetColor (log(fabs(val/(min+eps))) / (log(fabs(max/(min+eps)))+eps));
+     return MySetColor (builder, log(fabs(val/(min+eps))) / (log(fabs(max/(min+eps)))+eps));
   }
   else
   {
-     MySetColor ((val-min)/(max-min));
+     return MySetColor (builder, (val-min)/(max-min));
   }
 }
 
 float MySetColor (double val, float (&rgba)[4])
 {
    int i;
-   double t, r, g, b, *pal;
+   double t, *pal;
 
    int palSize = paletteGetSize();
 
@@ -1470,7 +1470,7 @@ float MySetColor (double val, float (&rgba)[4])
 void MySetColor (gl3::GlBuilder& builder, double val)
 {
    int i;
-   double t, r, g, b, *pal;
+   double t, *pal;
 
    int palSize = paletteGetSize();
 
@@ -1515,10 +1515,10 @@ void MySetColor (gl3::GlBuilder& builder, double val)
       t = 1.0 - t;
    }
    float rgba[4] = {
-       (1.0 - t) * pal[0] + t * pal[3],
-       (1.0 - t) * pal[1] + t * pal[4],
-       (1.0 - t) * pal[2] + t * pal[5],
-       MatAlpha < 1.0 ? malpha : 1.0
+       (float)((1.0 - t) * pal[0] + t * pal[3]),
+       (float)((1.0 - t) * pal[1] + t * pal[4]),
+       (float)((1.0 - t) * pal[2] + t * pal[5]),
+       (float)(MatAlpha < 1.0 ? malpha : 1.0)
    };
    builder.glColor4fv(rgba);
 }

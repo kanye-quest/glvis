@@ -2704,7 +2704,7 @@ void VisualizationSceneSolution3d::PrepareLevelSurf()
 
 void VisualizationSceneSolution3d::Draw()
 {
-   glEnable(GL_DEPTH_TEST);
+   gl->enableDepthTest();
 
    Set_Background();
    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

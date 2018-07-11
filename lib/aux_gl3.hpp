@@ -59,9 +59,9 @@ public:
     GlBuilder(GlDrawable * buf)
         : parent_buf(buf)
         , count(0) 
+        , is_line(false) 
         , use_color(false)
-        , use_color_tex(false)
-        , is_line(false) { }
+        , use_color_tex(false) { }
 
     void glBegin(GLenum e) {
 #ifdef GLVIS_OGL3
