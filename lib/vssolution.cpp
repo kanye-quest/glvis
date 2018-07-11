@@ -2436,7 +2436,7 @@ void VisualizationSceneSolution::Draw()
       disp_buf[shading].draw();
       if (GetUseTexture())
       {
-         gl->setModeColorTexture();
+         gl->setModeColor();
       }
    }
 
