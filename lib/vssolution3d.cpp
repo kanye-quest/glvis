@@ -695,13 +695,6 @@ void VisualizationSceneSolution3d::Init()
       wnd->setOnKeyDown(SDLK_F11, KeyF11Pressed);
       wnd->setOnKeyDown(SDLK_F12, KeyF12Pressed);
    }
-#ifndef GLVIS_OGL3
-   displlist  = glGenLists (1);
-   linelist   = glGenLists (1);
-   cplanelist = glGenLists (1);
-   cplanelineslist = glGenLists (1);
-   lsurflist = glGenLists (1);
-#endif
    Prepare();
    PrepareLines();
    CPPrepare();
@@ -710,13 +703,6 @@ void VisualizationSceneSolution3d::Init()
 
 VisualizationSceneSolution3d::~VisualizationSceneSolution3d()
 {
-#ifndef GLVIS_OGL3
-   glDeleteLists (displlist, 1);
-   glDeleteLists (lsurflist, 1);
-   glDeleteLists (linelist, 1);
-   glDeleteLists (cplanelist, 1);
-   glDeleteLists (cplanelineslist, 1);
-#endif
    delete [] node_pos;
 }
 

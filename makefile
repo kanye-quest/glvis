@@ -169,13 +169,13 @@ Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 # generated with 'echo lib/*.c*'
 SOURCE_FILES = lib/aux_vis.cpp lib/aux_gl3.cpp lib/font.cpp lib/sdl.cpp \
  lib/material.cpp lib/openglvis.cpp lib/palettes.cpp lib/threads.cpp lib/vsdata.cpp \
- lib/vssolution.cpp lib/vssolution3d.cpp lib/glstate.cpp
+ lib/vssolution.cpp lib/vssolution3d.cpp lib/vsvector.cpp lib/vsvector3d.cpp lib/glstate.cpp
 OBJECT_FILES1 = $(SOURCE_FILES:.cpp=.o)
 OBJECT_FILES = $(OBJECT_FILES1:.c=.o)
 # generated with 'echo lib/*.h*'
 HEADER_FILES = lib/aux_vis.hpp lib/aux_gl3.hpp lib/font.hpp lib/sdl.hpp lib/material.hpp \
  lib/openglvis.hpp lib/palettes.hpp lib/threads.hpp lib/visual.hpp \
- lib/vsdata.hpp lib/vssolution.hpp lib/vssolution3d.hpp lib/glstate.hpp
+ lib/vsdata.hpp lib/vssolution.hpp lib/vssolution3d.hpp lib/vsvector.hpp lib/vsvector3d.hpp lib/glstate.hpp
 
 # Targets
 
