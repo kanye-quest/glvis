@@ -1477,6 +1477,7 @@ void MySetColor (gl3::GlBuilder& builder, double val)
    if (UseTexture)
    {
       builder.glTexCoord1f(val);
+      return;
    }
 
    if (val < 0.0) { val = 0.0; }
