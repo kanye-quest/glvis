@@ -102,8 +102,8 @@ bool SdlWindow::createGlContext() {
 
 #ifndef __EMSCRIPTEN__
     SDL_GL_SetSwapInterval(0);
-#endif
     glEnable(GL_DEBUG_OUTPUT);
+#endif
 
     GLenum err = glewInit();
     if (err != GLEW_OK) {
@@ -308,30 +308,22 @@ Window SdlWindow::getXWindow() {
 #endif
 
 void SdlWindow::setWindowTitle(std::string& title) {
-#ifndef __EMSCRIPTEN__
     setWindowTitle(title.c_str());
-#endif
 }
 
 void SdlWindow::setWindowTitle(const char * title) {
-#ifndef __EMSCRIPTEN__
     if (_handle)
         SDL_SetWindowTitle(_handle->hwnd, title);
-#endif
 }
 
 void SdlWindow::setWindowSize(int w, int h) {
-#ifndef __EMSCRIPTEN__
     if (_handle)
         SDL_SetWindowSize(_handle->hwnd, w, h);
-#endif
 }
 
 void SdlWindow::setWindowPos(int x, int y) {
-#ifndef __EMSCRIPTEN__
     if (_handle)
         SDL_SetWindowPosition(_handle->hwnd, x, y);
-#endif
 }
 
 void SdlWindow::signalKeyDown(SDL_Keycode k, SDL_Keymod m) {

@@ -42,6 +42,7 @@ void MainLoop();
 
 SdlWindow * GetAppWindow();
 GlState * GetGlState();
+VisualizationScene * GetVisualizationScene();
 
 void AddIdleFunc(void (*Func)(void));
 void RemoveIdleFunc(void (*Func)(void));

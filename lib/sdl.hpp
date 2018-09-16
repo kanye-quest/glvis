@@ -102,6 +102,16 @@ public:
     void setOnMouseDown(int btn, MouseDelegate func) { onMouseDown[btn] = func; }
     void setOnMouseUp(int btn, MouseDelegate func) { onMouseUp[btn] = func; }
     void setOnMouseMove(int btn, MouseDelegate func) { onMouseMove[btn] = func; }
+
+    void clearEvents() {
+        onIdle = nullptr;
+        onExpose = nullptr;
+        onReshape = nullptr;
+        onKeyDown.clear();
+        onMouseUp.clear();
+        onMouseDown.clear();
+        onMouseMove.clear();
+    }
     
     void callKeyDown(SDL_Keycode k) { onKeyDown[k](0); } 
 

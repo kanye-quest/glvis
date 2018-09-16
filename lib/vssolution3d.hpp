@@ -129,6 +129,14 @@ public:
    virtual void UpdateLevelLines()
    { PrepareLines(); PrepareCuttingPlaneLines(); }
    virtual void UpdateValueRange(bool prepare);
+
+   virtual void SetDrawMesh(int i) {
+       if (drawmesh != i % 3) {
+           drawmesh = i % 3;
+           PrepareLines();
+       }
+   }
+   virtual int GetDrawMesh() { return drawmesh; }
 };
 
 int Normalize(DenseMatrix &normals);

@@ -46,8 +46,8 @@ static int glvis_multisample = -1;
 #endif
 
 //TODO: anything but this
-SdlWindow * wnd;
-GlState * state;
+SdlWindow * wnd = nullptr;
+GlState * state = nullptr;
 
 SdlWindow * GetAppWindow()
 {
@@ -59,35 +59,40 @@ GlState * GetGlState()
     return state;
 }
 
+VisualizationScene * GetVisualizationScene()
+{
+    return locscene;
+}
+
 void MyExpose(GLsizei w, GLsizei h);
 void MyExpose();
 
 int InitVisualization (const char name[], int x, int y, int w, int h)
 {
-   static int init = 0;
-
-   if (!init)
-   {
-      init = 1;
-   }
 
 #ifdef GLVIS_DEBUG
    cout << "OpenGL Visualization" << endl;
 #endif
-   wnd = new SdlWindow(name, w, h);
-   // GLenum mode = AUX_DOUBLE | AUX_RGBA | AUX_DEPTH;
-   // mode |= (AUX_ALPHA | AUX_ACCUM);
-   if (!wnd->isWindowInitialized()) {
-      return 1;
-   }
-   wnd->createGlContext();
-   if (!wnd->isGlInitialized()) {
-       return 1;
-   }
+   if (!wnd) {
+       wnd = new SdlWindow(name, w, h);
+       // GLenum mode = AUX_DOUBLE | AUX_RGBA | AUX_DEPTH;
+       // mode |= (AUX_ALPHA | AUX_ACCUM);
+       if (!wnd->isWindowInitialized()) {
+          return 1;
+       }
+       wnd->createGlContext();
+       if (!wnd->isGlInitialized()) {
+           return 1;
+       }
 
-   state = new GlState();
-   if (!state->compileShaders()) {
-       return 1;
+       state = new GlState();
+       if (!state->compileShaders()) {
+           return 1;
+       }
+       state->initShaderState();
+       paletteInit();
+   } else {
+       wnd->clearEvents();
    }
    state->initShaderState();
 
@@ -175,10 +180,14 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    wnd->setOnKeyDown (SDLK_RIGHTBRACKET, ScaleUp);
    wnd->setOnKeyDown (SDLK_AT, LookAt);
 
+#ifndef __EMSCRIPTEN__
    wnd->setOnKeyDown(SDLK_LEFTPAREN, ShrinkWindow);
    wnd->setOnKeyDown(SDLK_RIGHTPAREN, EnlargeWindow);
 
-   locscene = NULL;
+   if (locscene)
+       delete locscene;
+#endif
+   locscene = nullptr;
 
    return 0;
 }
@@ -332,6 +341,7 @@ void KillVisualization()
 {
    delete locscene;
    delete wnd;
+   wnd = nullptr;
 }
 
 void SendExposeEvent()

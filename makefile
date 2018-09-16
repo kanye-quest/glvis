@@ -69,14 +69,14 @@ endif
 GLVIS_JS = NO
 
 ifeq ($(GLVIS_JS),YES)
-   ifneq ($(MFEM_CXX),emcc)
-	  $(error MFEM was not compiled with Emscripten)
+   ifeq ($(filter $(MFEM_CXX), emcc em++),)
+      $(error MFEM was not compiled with Emscripten, but a JS build was requested)
    endif
 endif
 
 CXX = $(MFEM_CXX)
 CPPFLAGS = $(MFEM_CPPFLAGS)
-CXXFLAGS = $(MFEM_CXXFLAGS)
+CXXFLAGS = $(MFEM_CXXFLAGS) -fno-exceptions
 
 # MFEM config does not define C compiler
 CC = gcc
@@ -135,8 +135,8 @@ GL_OPTS = -I$(GLM_DIR)
 ifeq ($(GLVIS_JS), YES)
    GL_OPTS += -s USE_SDL=2
 else
-   GL_OPTS += -I$(X11_DIR)/include
-   GL_LIBS += -L$(X11_DIR)/lib -lGLEW -lSDL2 $(if $(NOTMAC),-lGL,-framework OpenGL)
+   GL_OPTS += -I$(X11_DIR)/include -I/usr/include/SDL2
+   GL_LIBS += -L$(X11_DIR)/lib -L/usr/lib/SDL2 -lGLEW -lSDL2 $(if $(NOTMAC),-lGL,-framework OpenGL)
 endif
 
 GLVIS_FLAGS += $(GL_OPTS)
@@ -218,6 +218,8 @@ EMCC_OPTS = --bind -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 -s SINGLE_FILE=1 --n
 %.bc: %.cpp $(HEADER_FILES)
 	$(CCC) -c lib/$(<F) -o lib/$(*F).bc
 
+%.bc: %.c $(HEADER_FILES)
+	$(CCC) -c lib/$(<F) -o lib/$(*F).bc
 
 #glvis: override MFEM_DIR = $(MFEM_DIR1)
 glvis:	glvis.cpp lib/libglvis.a $(CONFIG_MK) $(MFEM_LIB_FILE)

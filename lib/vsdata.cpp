@@ -342,14 +342,13 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
    }
    color_bar.clear();
    if (GetUseTexture()) {
-       auto& bar_buf = color_bar.getBuffer(gl3::VertexBuffer::LAYOUT_VTX_TEXTURE0,
-                                           GL_TRIANGLES);
-       bar_buf.addVertex({minx, miny, posz}, 0.f);
-       bar_buf.addVertex({maxx, miny, posz}, 0.f);
-       bar_buf.addVertex({maxx, maxy, posz}, 1.f);
-       bar_buf.addVertex({minx, maxy, posz}, 1.f);
-       bar_buf.addVertex({minx, miny, posz}, 0.f);
-       bar_buf.addVertex({maxx, maxy, posz}, 1.f);
+       color_bar.addTriangle(gl3::VertexTex{{minx, miny, posz},{0.f,0.f}},
+                             gl3::VertexTex{{maxx, miny, posz},{0.f,0.f}},
+                             gl3::VertexTex{{maxx, maxy, posz},{1.f,0.f}});
+       color_bar.addTriangle(gl3::VertexTex{{minx, maxy, posz},{1.f,0.f}},
+                             gl3::VertexTex{{minx, miny, posz},{0.f,0.f}},
+                             gl3::VertexTex{{maxx, maxy, posz},{1.f,0.f}});
+
    } else {
        const int nquads = 256;
        float rgba_lo[4];
@@ -362,27 +361,29 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
            Y_hi = (1.0 - a_hi) * miny + a_hi * maxy;
            MySetColor(a_lo, rgba_lo);
            MySetColor(a_hi, rgba_hi);
-           auto& bar_buf = color_bar.getBuffer(gl3::VertexBuffer::LAYOUT_VTX_COLOR,
-                                               GL_TRIANGLES);
-           bar_buf.addVertex({minx, Y_lo, posz}, {rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0});
-           bar_buf.addVertex({maxx, Y_lo, posz}, {rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0});
-           bar_buf.addVertex({maxx, Y_hi, posz}, {rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0});
-           bar_buf.addVertex({minx, Y_hi, posz}, {rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0});
-           bar_buf.addVertex({minx, Y_lo, posz}, {rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0});
-           bar_buf.addVertex({maxx, Y_hi, posz}, {rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0});
+           color_bar.addTriangle(
+               gl3::VertexColor{{minx, Y_lo, posz}, ColorU8(rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0)},
+               gl3::VertexColor{{maxx, Y_lo, posz}, ColorU8(rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0)},
+               gl3::VertexColor{{maxx, Y_hi, posz}, ColorU8(rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0)}
+           );
+           color_bar.addTriangle(
+               gl3::VertexColor{{minx, Y_hi, posz}, ColorU8(rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0)},
+               gl3::VertexColor{{minx, Y_lo, posz}, ColorU8(rgba_lo[0], rgba_lo[1], rgba_lo[2], 1.0)},
+               gl3::VertexColor{{maxx, Y_hi, posz}, ColorU8(rgba_hi[0], rgba_hi[1], rgba_hi[2], 1.0)}
+           );
        }
    }
 
    static const int border = 1;
 
    if (border == 1) {
-       color_bar.addLine({minx, miny, posz}, {maxx, miny, posz});
-       color_bar.addLine({maxx, miny, posz}, {maxx, maxy, posz});
-       color_bar.addLine({maxx, maxy, posz}, {minx, maxy, posz});
-       color_bar.addLine({minx, maxy, posz}, {minx, miny, posz});
+       color_bar.addLine(gl3::Vertex{minx, miny, posz}, gl3::Vertex{maxx, miny, posz});
+       color_bar.addLine(gl3::Vertex{maxx, miny, posz}, gl3::Vertex{maxx, maxy, posz});
+       color_bar.addLine(gl3::Vertex{maxx, maxy, posz}, gl3::Vertex{minx, maxy, posz});
+       color_bar.addLine(gl3::Vertex{minx, maxy, posz}, gl3::Vertex{minx, miny, posz});
    } else if (border == 2) {
-       color_bar.addLine({minx, miny, posz}, {maxx, miny, posz});
-       color_bar.addLine({maxx, maxy, posz}, {minx, maxy, posz});
+       color_bar.addLine(gl3::Vertex{minx, miny, posz}, gl3::Vertex{maxx, miny, posz});
+       color_bar.addLine(gl3::Vertex{maxx, maxy, posz}, gl3::Vertex{minx, maxy, posz});
    }
 
    if (levels)
@@ -576,7 +577,7 @@ void VisualizationSceneScalarData::DrawCaption()
 #ifndef GLVIS_USE_FREETYPE
    glCallLists(len, GL_UNSIGNED_BYTE, caption.c_str());
 #else
-   capt_buf.drawObject();
+   capt_buf.draw();
 #endif
    gl->projection = proj_save;
    gl->modelView = mv_save;
@@ -594,9 +595,9 @@ void VisualizationSceneScalarData::DrawCoordinateCross()
        float lenx, leny, lenz;
        lenx = leny = lenz = 1;
 
-       coord_cross.addLine({0, 0, 0}, {0, 0, 0.9});
-       coord_cross.addLine({0, 0, 0}, {0, 0.9, 0});
-       coord_cross.addLine({0, 0, 0}, {0.9, 0, 0});
+       coord_cross.addLine(gl3::Vertex{0, 0, 0}, gl3::Vertex{0, 0, 0.9});
+       coord_cross.addLine(gl3::Vertex{0, 0, 0}, gl3::Vertex{0, 0.9, 0});
+       coord_cross.addLine(gl3::Vertex{0, 0, 0}, gl3::Vertex{0.9, 0, 0});
        coord_cross.addCone(0,0,.9,0,0,1);
        coord_cross.addCone(0,.9,0,0,1,0);
        coord_cross.addCone(.9,0,0,1,0,0);
@@ -1073,57 +1074,46 @@ void VisualizationSceneScalarData::DrawRuler(bool log_z)
       double pos_z = LogVal(ruler_z, log_z);
       if (ruler_on == 2)
       {
-         float color_quads[] = { 0.8, 0.8, 0.8, 1.0 };
-         double norm_quads[] = { 0, 0, 1 };
-         double vert_quads[4][3] = {
-            { x[0], y[0], pos_z },
-            { x[1], y[0], pos_z },
-            { x[1], y[1], pos_z },
-            { x[0], y[1], pos_z }
-         };
+          std::array<uint8_t, 4> color = ColorU8(0.8, 0.8, 0.8, 1.0);
+          std::array<float, 3> norm = { 0, 0, 1 };
+          ruler.addQuad(
+              gl3::VertexNormColor{{x[0], y[0], pos_z},norm,color}, 
+              gl3::VertexNormColor{{x[1], y[0], pos_z},norm,color},
+              gl3::VertexNormColor{{x[1], y[1], pos_z},norm,color},
+              gl3::VertexNormColor{{x[0], y[1], pos_z},norm,color}
+          );
 
-         ruler.addQuadFace(vert_quads, norm_quads, color_quads); 
+          std::array<float, 3> norm_2 = { 0, 1, 0 };
+          ruler.addQuad(
+              gl3::VertexNormColor{{x[0], ruler_y, z[0]},norm_2,color},
+              gl3::VertexNormColor{{x[0], ruler_y, z[1]},norm_2,color},
+              gl3::VertexNormColor{{x[1], ruler_y, z[1]},norm_2,color},
+              gl3::VertexNormColor{{x[1], ruler_y, z[0]},norm_2,color}
+          );
 
-         double norm_quads2[] = { 0, 1, 0 };
-         double vert_quads2[4][3] = {
-            { x[0], ruler_y, z[0] },
-            { x[0], ruler_y, z[1] },
-            { x[1], ruler_y, z[1] },
-            { x[1], ruler_y, z[0] }
-         };
-         
-         ruler.addQuadFace(vert_quads2, norm_quads2, color_quads); 
+          std::array<float, 3> norm_3 = { 1, 0, 0 };
+          ruler.addQuads(
+              gl3::VertexNormColor{{ruler_x, y[0], z[0]},norm_3,color},
+              gl3::VertexNormColor{{ruler_x, y[1], z[0]},norm_3,color},
+              gl3::VertexNormColor{{ruler_x, y[1], z[1]},norm_3,color},
+              gl3::VertexNormColor{{ruler_x, y[0], z[1]},norm_3,color}
+          };
 
-         double norm_quads3[] = { 1, 0, 0 };
-         double vert_quads3[4][3] = {
-            { ruler_x, y[0], z[0] },
-            { ruler_x, y[1], z[0] },
-            { ruler_x, y[1], z[1] },
-            { ruler_x, y[0], z[1] }
-         };
-         
-         ruler.addQuadFace(vert_quads3, norm_quads3, color_quads);
 
-         line.glBegin(GL_LINE_LOOP);
-         line.glVertex3d(x[0], y[0], pos_z);
-         line.glVertex3d(x[1], y[0], pos_z);
-         line.glVertex3d(x[1], y[1], pos_z);
-         line.glVertex3d(x[0], y[1], pos_z);
-         line.glEnd();
+         ruler_lines.addLine(gl3::Vertex{x[0], y[0], pos_z}, gl3::Vertex{x[1], y[0], pos_z});
+         ruler_lines.addLine(gl3::Vertex{x[1], y[0], pos_z}, gl3::Vertex{x[1], y[1], pos_z});
+         ruler_lines.addLine(gl3::Vertex{x[1], y[1], pos_z}, gl3::Vertex{x[0], y[1], pos_z});
+         ruler_lines.addLine(gl3::Vertex{x[0], y[1], pos_z}, gl3::Vertex{x[0], y[0], pos_z});
 
-         line.glBegin(GL_LINE_LOOP);
-         line.glVertex3d(x[0], ruler_y, z[0]);
-         line.glVertex3d(x[1], ruler_y, z[0]);
-         line.glVertex3d(x[1], ruler_y, z[1]);
-         line.glVertex3d(x[0], ruler_y, z[1]);
-         line.glEnd();
+         ruler_lines.addLine(gl3::Vertex{x[0], ruler_lines_y, z[0]}, gl3::Vertex{x[1], ruler_lines_y, z[0]});
+         ruler_lines.addLine(gl3::Vertex{x[1], ruler_lines_y, z[0]}, gl3::Vertex{x[1], ruler_lines_y, z[1]});
+         ruler_lines.addLine(gl3::Vertex{x[1], ruler_lines_y, z[1]}, gl3::Vertex{x[0], ruler_lines_y, z[1]});
+         ruler_lines.addLine(gl3::Vertex{x[0], ruler_lines_y, z[1]}, gl3::Vertex{x[0], ruler_lines_y, z[0]});
 
-         line.glBegin(GL_LINE_LOOP);
-         line.glVertex3d(ruler_x, y[0], z[0]);
-         line.glVertex3d(ruler_x, y[1], z[0]);
-         line.glVertex3d(ruler_x, y[1], z[1]);
-         line.glVertex3d(ruler_x, y[0], z[1]);
-         line.glEnd();
+         ruler_lines.addLine(gl3::Vertex{ruler_lines_x, y[0], z[0]}, gl3::Vertex{ruler_lines_x, y[1], z[0]});
+         ruler_lines.addLine(gl3::Vertex{ruler_lines_x, y[1], z[0]}, gl3::Vertex{ruler_lines_x, y[1], z[1]});
+         ruler_lines.addLine(gl3::Vertex{ruler_lines_x, y[1], z[1]}, gl3::Vertex{ruler_lines_x, y[0], z[1]});
+         ruler_lines.addLine(gl3::Vertex{ruler_lines_x, y[0], z[1]}, gl3::Vertex{ruler_lines_x, y[0], z[0]});
       }
 
       line.glBegin(GL_LINES);
