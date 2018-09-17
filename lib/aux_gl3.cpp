@@ -173,7 +173,6 @@ void TextBuffer::draw() {
 void GlDrawable::addCone(float x, float y, float z,
                          float vx, float vy, float vz,
                          float cone_scale) {
-    VertexBuffer<VertexNorm>& buf = getBuffer<VertexNorm>(GL_TRIANGLES);
     double rhos  = sqrt (vx*vx+vy*vy+vz*vz);
     float phi   = acos(vz/rhos);
     float theta = atan2 (vy, vx);
@@ -222,16 +221,16 @@ void GlDrawable::addCone(float x, float y, float z,
 
     std::vector<float> cone_pts;
     for (int i = 0; i < 4; i++) {
-        addTriangle<VertexNorm>(
-            {
+        addTriangle(
+            VertexNorm {
                 {orig[0],   orig[1],   orig[2]},
                 {orig_n[0], orig_n[1], orig_n[2]}
             },
-            {
+            VertexNorm {
                 {base[i][0],   base[i][1],   base[i][2]},
                 {base_n[i][0], base_n[i][1], base_n[i][2]}
             },
-            {
+            VertexNorm {
                 {base[(i+1)%4][0],   base[(i+1)%4][1],   base[(i+1)%4][2]},
                 {base_n[(i+1)%4][0], base_n[(i+1)%4][1], base_n[(i+1)%4][2]}
             }
@@ -244,24 +243,24 @@ void GlBuilder::saveVertex(const GlBuilder::_vertex& v) {
     if (!use_norm) {
         if (use_color) {
             parent_buf->getBuffer<VertexColor>(dst_buf)
-                .addVertex({v.coords, v.color});
+                .addVertex(VertexColor{v.coords, v.color});
         } else if (use_tex) {
             parent_buf->getBuffer<VertexTex>(dst_buf)
-                .addVertex({v.coords, v.texcoord});
+                .addVertex(VertexTex{v.coords, v.texcoord});
         } else {
             parent_buf->getBuffer<Vertex>(dst_buf)
-                .addVertex({v.coords});
+                .addVertex(Vertex{v.coords});
         }
     } else {
         if (use_color) {
             parent_buf->getBuffer<VertexNormColor>(dst_buf)
-                        .addVertex({v.coords, v.norm, v.color});
+                        .addVertex(VertexNormColor{v.coords, v.norm, v.color});
         } else if (use_tex) {
             parent_buf->getBuffer<VertexNormTex>(dst_buf)
-                        .addVertex({v.coords, v.norm, v.color});
+                        .addVertex(VertexNormTex{v.coords, v.norm, v.texcoord});
         } else {
             parent_buf->getBuffer<VertexNorm>(dst_buf)
-                        .addVertex({v.coords, v.norm});
+                        .addVertex(VertexNorm{v.coords, v.norm});
         }
     }
 }

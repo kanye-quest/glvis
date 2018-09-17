@@ -94,12 +94,21 @@ struct alignas(16) VertexNormTex
     static const int layout = LAYOUT_VTX_NORMAL_TEXTURE0;
 };
 
-std::array<uint8_t, 4> ColorU8(float r, float g, float b, float a) {
+inline std::array<uint8_t, 4> ColorU8(float r, float g, float b, float a) {
     return {
         (r >= 1.0) ? (uint8_t) 255 : (uint8_t)(r * 256.),
         (g >= 1.0) ? (uint8_t) 255 : (uint8_t)(g * 256.),
         (b >= 1.0) ? (uint8_t) 255 : (uint8_t)(b * 256.),
         (a >= 1.0) ? (uint8_t) 255 : (uint8_t)(a * 256.),
+    };
+}
+
+inline std::array<uint8_t, 4> ColorU8(float rgba[]) {
+    return {
+        (rgba[0] >= 1.0) ? (uint8_t) 255 : (uint8_t)(rgba[0] * 256.),
+        (rgba[1] >= 1.0) ? (uint8_t) 255 : (uint8_t)(rgba[1] * 256.),
+        (rgba[2] >= 1.0) ? (uint8_t) 255 : (uint8_t)(rgba[2] * 256.),
+        (rgba[3] >= 1.0) ? (uint8_t) 255 : (uint8_t)(rgba[3] * 256.),
     };
 }
 
@@ -161,10 +170,10 @@ public:
                 saveVertex(curr);
             }
         }
-        if (render_as == GL_LINE_LOOP) {
+        if (render_as == GL_LINE_LOOP && count > 2) {
             //link first and last vertex
             saveVertex(saved[0]);
-            saveVertex(curr);
+            saveVertex(saved[1]);
         }
         count = 0;
     }
@@ -178,7 +187,8 @@ public:
             //LINE_LOOP and LINE_STRIP: each vertex creates a new line with the
             //previous vertex
             if (count == 0) {
-                saved[0] = saved[1] = curr;
+                saved[0] = curr;
+                saved[1] = curr;
             } else {
                 saveVertex(saved[1]);
                 saveVertex(curr);
@@ -266,8 +276,8 @@ class VertexBuffer : public IVertexBuffer
 private:
     std::vector<T> _data;
     std::unique_ptr<GLuint> _handle;
-    int _buffered_size;
-    int _allocated_size;
+    size_t _buffered_size;
+    size_t _allocated_size;
 
 public:
     VertexBuffer()
@@ -302,9 +312,9 @@ public:
         }
         glBindBuffer(GL_ARRAY_BUFFER, *_handle);
         if (_allocated_size >= _data.size()) {
-            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * _data.size(), _data.data());
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(T) * _data.size(), _data.data());
         } else {
-            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * _data.size(), _data.data(), GL_DYNAMIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, sizeof(T) * _data.size(), _data.data(), GL_DYNAMIC_DRAW);
             _allocated_size = _data.size();
         }
         _buffered_size = _data.size();
@@ -319,7 +329,7 @@ public:
         }
         glBindBuffer(GL_ARRAY_BUFFER, *_handle);
         T::setupAttribLayout();
-        glDrawArrays(shape, 0, _buffered_size / sizeof(T));
+        glDrawArrays(shape, 0, _buffered_size);
         T::clearAttribLayout();
     }
 
