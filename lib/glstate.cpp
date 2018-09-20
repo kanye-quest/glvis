@@ -8,121 +8,25 @@ using std::endl;
 #ifdef __EMSCRIPTEN__
 const std::string _glsl_add = "precision mediump float;\n";
 #else
-const std::string _glsl_add = "#version 120\n";
+const std::string _glsl_add = "#version 130\n";
 #endif
 
 const std::string vertex_shader_file = _glsl_add +
-R"(
-attribute vec3 vertex;
-attribute vec2 textVertex;
-attribute vec4 color;
-attribute vec3 normal;
-attribute vec2 texCoord0;
-attribute vec2 texCoord1;
-
-uniform bool containsText;
-
-uniform mat4 modelViewMatrix;
-uniform mat4 projectionMatrix;
-uniform mat4 textProjMatrix;
-uniform mat3 normalMatrix; 
- 
-uniform vec4 clipPlane;
-
-varying vec3 fNormal; 
-varying vec3 fPosition; 
-varying vec4 fColor; 
-varying vec2 fTexCoord; 
-varying vec2 fFontTexCoord;
-varying float fClipVal;
-varying float fAlpha;
- 
-void main() 
-{ 
-    fNormal = normalize(normalMatrix * normal); 
-    vec4 pos = modelViewMatrix * vec4(vertex, 1.0);
-    fPosition = pos.xyz; 
-    fColor = color; 
-    fTexCoord = texCoord0.xy;
-    fFontTexCoord = texCoord1.xy;
-    fClipVal = dot(vec4(pos.xyz, 1.0), clipPlane);
-    vec4 textOffset = textProjMatrix * vec4(textVertex, 0.0, 0.0);
-    pos = projectionMatrix * pos;
-    gl_Position = pos;
-    if (containsText) {
-        gl_Position += vec4((textOffset.xy * pos.w), -0.005, 0.0);
-    }
-})";
+#include "shaders/clip_plane.vert"
++
+#include "shaders/default.vert"
+;
 
 const std::string fragment_shader_file = _glsl_add +
+#include "shaders/lighting.glsl"
++
 R"(
-uniform bool containsText; 
-uniform bool useColorTex;
-uniform bool useClipPlane;
- 
-uniform sampler2D fontTex; 
-uniform sampler2D colorTex;
- 
-varying vec3 fNormal; 
-varying vec3 fPosition; 
-varying vec4 fColor; 
-varying vec2 fTexCoord; 
-varying vec2 fFontTexCoord; 
-varying float fClipVal;
-
-struct PointLight { 
-    vec3 position; 
-    vec4 diffuse; 
-    vec4 specular; 
-}; 
- 
-uniform int numLights; 
-uniform PointLight lights[3]; 
-uniform vec4 g_ambient;
-
-struct Material {
-    vec4 specular; 
-    float shininess; 
-}; 
- 
-uniform Material material;
- 
-void main() 
-{
-    if (useClipPlane && fClipVal < 0.0) {
-        discard;
-    }
-    vec4 color = fColor; 
-    if (containsText) { 
-        gl_FragColor = color * vec4(1.0, 1.0, 1.0, texture2D(fontTex, fFontTexCoord).r);
-    } else { 
-        if (useColorTex) { 
-            color.xyz = texture2D(colorTex, vec2(fTexCoord.x, 0.0)).xyz;
-            color.w = 1.0 - fTexCoord.y;
-        }
-        if (numLights == 0) {
-            gl_FragColor = color;
-        } else {
-            float normSgn = float(int(gl_FrontFacing) * 2 - 1);
-            vec4 ambient_light = g_ambient * color; 
-            vec4 diffuse_light = vec4(0.0, 0.0, 0.0, 0.0); 
-            vec4 specular_light = vec4(0.0, 0.0, 0.0, 0.0); 
-            for (int i = 0; i < 3; i++) {
-                if (i == numLights)
-                    break;
-                vec3 light_dir = normalize(lights[i].position - fPosition); 
-                diffuse_light += lights[i].diffuse * color * max(dot(fNormal * normSgn, light_dir), 0.0); 
-     
-                vec3 eye_to_vert = normalize(-fPosition);
-                vec3 half_v = normalize(eye_to_vert + light_dir);
-                float specular_factor = max(dot(half_v, normSgn * fNormal), 0.0); 
-                specular_light += lights[i].specular * material.specular * pow(specular_factor, material.shininess); 
-            } 
-            gl_FragColor.xyz = ambient_light.xyz + diffuse_light.xyz + specular_light.xyz;
-            gl_FragColor.w = color.w;
-        }
-    } 
-})";
+void fragmentClipPlane() {
+}
+)"
++
+#include "shaders/default.frag"
+;
 
 bool GlState::compileShaders() {
     GLuint vtx_shader = glCreateShader(GL_VERTEX_SHADER);

@@ -342,12 +342,12 @@ void VisualizationSceneScalarData::DrawColorBar (double minval, double maxval,
    }
    color_bar.clear();
    if (GetUseTexture()) {
-       color_bar.addTriangle(gl3::VertexTex{{minx, miny, posz},{0.f,0.f}},
-                             gl3::VertexTex{{maxx, miny, posz},{0.f,0.f}},
-                             gl3::VertexTex{{maxx, maxy, posz},{1.f,0.f}});
-       color_bar.addTriangle(gl3::VertexTex{{minx, maxy, posz},{1.f,0.f}},
-                             gl3::VertexTex{{minx, miny, posz},{0.f,0.f}},
-                             gl3::VertexTex{{maxx, maxy, posz},{1.f,0.f}});
+       color_bar.addTriangle(gl3::VertexTex{{minx, miny, posz},{0.f,1.f}},
+                             gl3::VertexTex{{maxx, miny, posz},{0.f,1.f}},
+                             gl3::VertexTex{{maxx, maxy, posz},{1.f,1.f}});
+       color_bar.addTriangle(gl3::VertexTex{{minx, maxy, posz},{1.f,1.f}},
+                             gl3::VertexTex{{minx, miny, posz},{0.f,1.f}},
+                             gl3::VertexTex{{maxx, maxy, posz},{1.f,1.f}});
 
    } else {
        const int nquads = 256;

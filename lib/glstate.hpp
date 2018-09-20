@@ -111,7 +111,7 @@ protected:
          _depthTest = false,
          _blend = false,
          _colorMat = false,
-         _clipPlane = false;
+         _useClipPlane = false;
     float _staticColor[4];
 
     //lighting uniforms
@@ -168,16 +168,24 @@ public:
     }
 
     void enableClipPlane() {
-        if (!_clipPlane) {
+        if (!_useClipPlane) {
+#ifdef __EMSCRIPTEN__
             glUniform1i(locUseClipPlane, GL_TRUE); 
-            _clipPlane = true;
+#else
+            glEnable(GL_CLIP_DISTANCE0);
+#endif
+            _useClipPlane = true;
         }
     }
 
     void disableClipPlane() {
-        if (_clipPlane) {
+        if (_useClipPlane) {
+#ifdef __EMSCRIPTEN__
             glUniform1i(locUseClipPlane, GL_FALSE);
-            _clipPlane = false;
+#else
+            glDisable(GL_CLIP_DISTANCE0);
+#endif
+            _useClipPlane = false;
         }
     }
 
@@ -413,9 +421,9 @@ public:
         vp[3] = _h;
     }
 
-    render_type getRenderMode() {
-        return _shaderMode;
-    }
+    render_type getRenderMode() { return _shaderMode; }
+
+    GLuint getShaderProgram() { return program; }
 };
 
 #endif
