@@ -94,7 +94,7 @@ void main()
     }
     vec4 color = fColor; 
     if (containsText) { 
-        gl_FragColor = color * vec4(1.0, 1.0, 1.0, texture2D(fontTex, fFontTexCoord).a);
+        gl_FragColor = color * vec4(1.0, 1.0, 1.0, texture2D(fontTex, fFontTexCoord).r);
     } else { 
         if (useColorTex) { 
             color.xyz = texture2D(colorTex, vec2(fTexCoord.x, 0.0)).xyz;
@@ -214,4 +214,7 @@ void GlState::initShaderState() {
     modelView.identity();
     projection.identity();
     loadMatrixUniforms();
+
+    glGenVertexArrays(1, &global_vao);
+    glBindVertexArray(global_vao);
 }

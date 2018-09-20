@@ -101,6 +101,7 @@ protected:
     render_type _shaderMode;
 
     GLuint program;
+    GLuint global_vao;
 
     int _w;
     int _h;
