@@ -49,7 +49,7 @@ void VertexTex::setupAttribLayout() {
 }
 
 void VertexTex::clearAttribLayout() {
-    GetGlState()->enableAttribArray(GlState::ATTR_TEXCOORD0);
+    GetGlState()->disableAttribArray(GlState::ATTR_TEXCOORD0);
 }
 
 void VertexNorm::setupAttribLayout() {
@@ -99,7 +99,7 @@ void VertexNormTex::setupAttribLayout() {
 
 void VertexNormTex::clearAttribLayout() {
     GetGlState()->disableAttribArray(GlState::ATTR_NORMAL);
-    GetGlState()->enableAttribArray(GlState::ATTR_TEXCOORD0);
+    GetGlState()->disableAttribArray(GlState::ATTR_TEXCOORD0);
 }
 
 void TextBuffer::buffer() {

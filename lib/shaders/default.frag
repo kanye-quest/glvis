@@ -14,8 +14,13 @@ void main()
 {
     fragmentClipPlane();
     vec4 color;
-    if (containsText) { 
+    if (containsText) {
+
+#ifdef GL_ES
+        color = fColor * vec4(1.0, 1.0, 1.0, texture2D(fontTex, fTexCoord).a);
+#else
         color = fColor * vec4(1.0, 1.0, 1.0, texture2D(fontTex, fTexCoord).r);
+#endif
     } else {
         if (useColorTex) {
             color.xyz = texture2D(colorTex, vec2(fTexCoord.x, 0.0)).xyz;

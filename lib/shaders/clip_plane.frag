@@ -13,5 +13,5 @@ void fragmentClipPlane() {
 R"(
 void fragmentClipPlane() {
 }
-")
+)"
 #endif

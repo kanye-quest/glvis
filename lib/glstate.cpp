@@ -20,10 +20,7 @@ const std::string vertex_shader_file = _glsl_add +
 const std::string fragment_shader_file = _glsl_add +
 #include "shaders/lighting.glsl"
 +
-R"(
-void fragmentClipPlane() {
-}
-)"
+#include "shaders/clip_plane.frag"
 +
 #include "shaders/default.frag"
 ;
@@ -118,7 +115,8 @@ void GlState::initShaderState() {
     modelView.identity();
     projection.identity();
     loadMatrixUniforms();
-
+#ifndef __EMSCRIPTEN__
     glGenVertexArrays(1, &global_vao);
     glBindVertexArray(global_vao);
+#endif
 }

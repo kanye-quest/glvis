@@ -265,6 +265,7 @@ public:
 class IVertexBuffer
 {
 public:
+    virtual ~IVertexBuffer() { }
     virtual void clear() = 0;
     virtual void buffer() = 0;
     virtual void draw(GLenum shape) = 0;
