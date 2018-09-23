@@ -269,6 +269,14 @@ public:
     virtual void clear() = 0;
     virtual void buffer() = 0;
     virtual void draw(GLenum shape) = 0;
+
+    //TODO: throw error if non-overriden function called
+    virtual void addVertex(const Vertex&) { }
+    virtual void addVertex(const VertexColor&) { }
+    virtual void addVertex(const VertexTex&) { }
+    virtual void addVertex(const VertexNorm&) { }
+    virtual void addVertex(const VertexNormColor&) { }
+    virtual void addVertex(const VertexNormTex&) { }
 };
 
 template<typename T>
@@ -367,6 +375,9 @@ public:
         _data.emplace_back(x, y, z, text);
     }
 
+    /**
+     * Buffers the text onto the GPU.
+     */
     void buffer();
 
     bool getObjectSize(const std::string& text, int& w, int& h) {
@@ -381,10 +392,13 @@ public:
     }
 
     /**
-     * Draws the text.
+     * Draws the text buffered onto the GPU.
      */
     void draw();
 
+    /**
+     * Clears the text buffer.
+     */
     void clear() {
         _data.clear();
         _size = 0;
@@ -395,18 +409,20 @@ class GlDrawable {
 private:
     std::unordered_map<GLenum, std::unique_ptr<IVertexBuffer>> buffers[NUM_LAYOUTS];
     TextBuffer text_buffer;
-public:
-   
+
+    friend class GlBuilder;
+
     template<typename Vert>
-    VertexBuffer<Vert>& getBuffer(GLenum shape) {
+    IVertexBuffer& getBuffer(GLenum shape) {
         auto loc = buffers[Vert::layout].find(shape);
         if (loc != buffers[Vert::layout].end()) {
-            return *(dynamic_cast<VertexBuffer<Vert>*>(loc->second.get()));
+            return *(loc->second.get());
         }
         std::unique_ptr<IVertexBuffer> new_buf(new VertexBuffer<Vert>);
         buffers[Vert::layout].emplace(shape, std::move(new_buf));
-        return *dynamic_cast<VertexBuffer<Vert>*>(buffers[Vert::layout][shape].get());
+        return *(buffers[Vert::layout][shape].get());
     }
+public:
 
     /**
      * Adds a string at the given position in object coordinates.

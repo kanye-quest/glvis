@@ -76,7 +76,7 @@ endif
 
 CXX = $(MFEM_CXX)
 CPPFLAGS = $(MFEM_CPPFLAGS)
-CXXFLAGS = $(MFEM_CXXFLAGS) -fno-exceptions
+CXXFLAGS = $(MFEM_CXXFLAGS) 
 
 # MFEM config does not define C compiler
 CC = gcc
@@ -96,6 +96,8 @@ ifneq ($(GLVIS_DEBUG),$(MFEM_DEBUG))
       CXXFLAGS = $(OPTIM_OPTS)
    endif
 endif
+
+CXXFLAGS += -Wno-narrowing -fno-exceptions
 
 GLVIS_FLAGS = $(CPPFLAGS) $(CXXFLAGS) $(MFEM_INCFLAGS)
 GLVIS_LIBS = $(MFEM_LIBS)
@@ -203,7 +205,7 @@ HEADER_FILES = lib/aux_vis.hpp lib/aux_gl3.hpp lib/font.hpp lib/sdl.hpp lib/mate
  lib/openglvis.hpp lib/palettes.hpp lib/visual.hpp \
  lib/vsdata.hpp lib/vssolution.hpp lib/vssolution3d.hpp lib/vsvector.hpp lib/vsvector3d.hpp lib/glstate.hpp
 
-EMCC_OPTS = --bind -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 -s SINGLE_FILE=1 --no-heap-copy
+EMCC_OPTS = --bind --llvm-lto 1 -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 -s SINGLE_FILE=1 --no-heap-copy
 
 # Targets
 
