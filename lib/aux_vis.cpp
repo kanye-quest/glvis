@@ -691,7 +691,7 @@ void RightButtonLoc (EventInfo *event)
 
    if (event->data[2] & KMOD_SHIFT)
    {
-      glLoadIdentity();
+      //glLoadIdentity();
       // GLfloat light[] = {newx,-newy, sqrt((float)(newx*newx+newy*newy)), 0.0 };
       newx -= startx;
       newy -= starty;
@@ -1564,18 +1564,6 @@ void InitFont()
 
 GlVisFont * GetFont() {
    return &glvis_font;
-}
-
-void DrawBitmapText(const char *text, float x, float y, float z)
-{
-   if (!glvis_font.isFontLoaded()) {
-       if (!SetFont(fc_font_patterns, num_font_patterns, font_size))
-           return;
-   }
-   std::string toBuf(text);
-   uint32_t vbo = glvis_font.BufferText(toBuf);
-   glvis_font.RenderBuffer(vbo, x, y, z);
-   glDeleteBuffers(1, &vbo);
 }
 
 bool SetFont(const char *font_patterns[], int num_patterns, int height) {

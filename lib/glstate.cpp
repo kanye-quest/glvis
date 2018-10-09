@@ -25,6 +25,27 @@ const std::string fragment_shader_file = _glsl_add +
 #include "shaders/default.frag"
 ;
 
+GLuint compileShaderFile(GLenum shaderType, const std::string& shaderText) {
+    GLuint shader = glCreateShader(shaderType);
+    GLint success = 0;
+    int shader_len = shaderText.length();
+    const char * shader_cstr = shaderText.c_str();
+    glShaderSource(shader, 1, &shader_cstr, &shader_len);
+    glCompileShader(shader);
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (success == GL_FALSE) {
+        cerr << "Shader compilation failed." << endl;
+        int err_len; 
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &err_len);
+        char * error_text = new char[err_len];
+        glGetShaderInfoLog(shader, err_len, &err_len, error_text);
+        cerr << error_text << endl;
+        delete [] error_text;
+        return 0;
+    }
+    return shader;
+}
+
 bool GlState::compileShaders() {
     GLuint vtx_shader = glCreateShader(GL_VERTEX_SHADER);
     GLuint frag_shader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -98,8 +119,18 @@ void GlState::initShaderState() {
     locProjectText = glGetUniformLocation(program, "textProjMatrix");
     locNormal = glGetUniformLocation(program, "normalMatrix");
 
+    locNumLights = glGetUniformLocation(program, "num_lights");
+    locGlobalAmb = glGetUniformLocation(program, "g_ambient");
+
     locSpec = glGetUniformLocation(program, "material.specular");
     locShin = glGetUniformLocation(program, "material.shininess");
+
+    for (int i = 0; i < MAX_LIGHTS; i++) {
+        std::string location = "lights[" + std::to_string(i) + "].";
+        locPosition[i] = glGetUniformLocation(program, (location + "position").c_str());
+        locDiffuse[i] = glGetUniformLocation(program, (location + "diffuse").c_str());
+        locSpecular[i] = glGetUniformLocation(program, (location + "specular").c_str());
+    }
 
     //Texture unit 0: color palettes
     //Texture unit 1: font atlas
@@ -107,9 +138,9 @@ void GlState::initShaderState() {
     GLuint locFontTex = glGetUniformLocation(program, "fontTex");
     glUniform1i(locColorTex, 0);
     glUniform1i(locFontTex, 1);
-    GLuint locContainsText = glGetUniformLocation(program, "containsText");
+    locContainsText = glGetUniformLocation(program, "containsText");
     glUniform1i(locContainsText, GL_FALSE);
-    GLuint locUseColorTex = glGetUniformLocation(program, "useColorTex");
+    locUseColorTex = glGetUniformLocation(program, "useColorTex");
     glUniform1i(locUseColorTex, GL_FALSE);
     _shaderMode = RENDER_COLOR;
     modelView.identity();

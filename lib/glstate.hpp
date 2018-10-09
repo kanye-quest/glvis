@@ -107,103 +107,35 @@ protected:
     int _h;
 
     //client state variables
-    bool _lighting = false,
-         _depthTest = false,
-         _blend = false,
-         _colorMat = false,
-         _useClipPlane = false;
-    float _staticColor[4];
+    bool gl_lighting = false,
+         gl_depth_test = false,
+         gl_blend = false,
+         gl_clip_plane = false;
+    float _static_color[4];
 
-    //lighting uniforms
-    int _numLights;
+    static const int MAX_LIGHTS = 3;
+    //cached uniforms
+    int _num_lights;
     float _ambient[4];
+    Light _pt_lights[3];
 
     glm::vec4 _clip_plane;
     GlMatrix _projection_cp;
 
-    //shader locations
+    //shader attrib locations
     int _attr_locs[NUM_ATTRS];
     bool _attr_enabled[NUM_ATTRS];
 
+    //shader uniform locations
+    GLuint locUseColorTex, locContainsText;
     GLuint locUseClipPlane, locClipPlane;
     GLuint locSpec, locShin;
     GLuint locModelView, locProject, locProjectText, locNormal;
-
-    glm::vec3 getRasterPoint(double x, double y, double z) {
-        return glm::project(glm::vec3(x, y, z), modelView.mtx, projection.mtx, glm::vec4(0, 0, _w, _h));
-    }
-
+    GLuint locNumLights, locGlobalAmb;
+    GLuint locPosition[MAX_LIGHTS], locDiffuse[MAX_LIGHTS], locSpecular[MAX_LIGHTS];
 public:
     GlMatrix modelView;
     GlMatrix projection;
-
-    void enableDepthTest() {
-        if (!_depthTest) {
-            glEnable(GL_DEPTH_TEST);
-            glDepthFunc(GL_LEQUAL);
-            _depthTest = true;
-        }
-    }
-
-    void disableDepthTest() {
-        if (_depthTest) {
-            glDisable(GL_DEPTH_TEST);
-            _depthTest = false;
-        }
-    }
-
-    void enableBlend() {
-        if (!_blend) {
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            _blend = true;
-        }
-    }
-
-    void disableBlend() {
-        if (_blend) {
-            glDisable(GL_BLEND);
-            _blend = false;
-        }
-    }
-
-    void enableClipPlane() {
-        if (!_useClipPlane) {
-#ifdef __EMSCRIPTEN__
-            glUniform1i(locUseClipPlane, GL_TRUE); 
-#else
-            glEnable(GL_CLIP_DISTANCE0);
-#endif
-            _useClipPlane = true;
-        }
-    }
-
-    void disableClipPlane() {
-        if (_useClipPlane) {
-#ifdef __EMSCRIPTEN__
-            glUniform1i(locUseClipPlane, GL_FALSE);
-#else
-            glDisable(GL_CLIP_DISTANCE0);
-#endif
-            _useClipPlane = false;
-        }
-    }
-
-    void setClipPlane(const double * eqn) {
-        _clip_plane = glm::vec4(eqn[0], eqn[1], eqn[2], eqn[3]);
-        _clip_plane = glm::inverseTranspose(modelView.mtx) * _clip_plane;
-        glUniform4fv(locClipPlane, 1, glm::value_ptr(_clip_plane));
-    }
-
-    void setStaticColor(float r, float g, float b, float a = 1.0) {
-        _staticColor[0] = r;
-        _staticColor[1] = g;
-        _staticColor[2] = b;
-        _staticColor[3] = a;
-        if (!_attr_enabled[ATTR_COLOR]) {
-            glVertexAttrib4fv(_attr_locs[ATTR_COLOR], _staticColor);
-        }
-    }
 
     GlState()
         : program(0),
@@ -226,6 +158,74 @@ public:
      */
     void initShaderState();
 
+    void enableDepthTest() {
+        if (!gl_depth_test) {
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_LEQUAL);
+            gl_depth_test = true;
+        }
+    }
+
+    void disableDepthTest() {
+        if (gl_depth_test) {
+            glDisable(GL_DEPTH_TEST);
+            gl_depth_test = false;
+        }
+    }
+
+    void enableBlend() {
+        if (!gl_blend) {
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            gl_blend = true;
+        }
+    }
+
+    void disableBlend() {
+        if (gl_blend) {
+            glDisable(GL_BLEND);
+            gl_blend = false;
+        }
+    }
+
+    void enableClipPlane() {
+        if (!gl_clip_plane) {
+#ifdef __EMSCRIPTEN__
+            glUniform1i(locUseClipPlane, GL_TRUE); 
+#else
+            glEnable(GL_CLIP_DISTANCE0);
+#endif
+            gl_clip_plane = true;
+        }
+    }
+
+    void disableClipPlane() {
+        if (gl_clip_plane) {
+#ifdef __EMSCRIPTEN__
+            glUniform1i(locUseClipPlane, GL_FALSE);
+#else
+            glDisable(GL_CLIP_DISTANCE0);
+#endif
+            gl_clip_plane = false;
+        }
+    }
+
+    void setClipPlane(const double * eqn) {
+        _clip_plane = glm::vec4(eqn[0], eqn[1], eqn[2], eqn[3]);
+        _clip_plane = glm::inverseTranspose(modelView.mtx) * _clip_plane;
+        glUniform4fv(locClipPlane, 1, glm::value_ptr(_clip_plane));
+    }
+
+    void setStaticColor(float r, float g, float b, float a = 1.0) {
+        _static_color[0] = r;
+        _static_color[1] = g;
+        _static_color[2] = b;
+        _static_color[3] = a;
+        if (!_attr_enabled[ATTR_COLOR]) {
+            glVertexAttrib4fv(_attr_locs[ATTR_COLOR], _static_color);
+        }
+    }
+
     int getAttribLoc(GlState::shader_attrib attr) {
         return _attr_locs[attr];
     }
@@ -235,9 +235,6 @@ public:
             glEnableVertexAttribArray(_attr_locs[attr]);
             _attr_enabled[attr] = true;
         }
-        if (attr == ATTR_TEXCOORD0) {
-            glVertexAttrib2f(_attr_locs[ATTR_TEXCOORD0], 0.f, 1.f);
-        }
     }
 
     void disableAttribArray(GlState::shader_attrib attr) {
@@ -246,7 +243,7 @@ public:
             _attr_enabled[attr] = false;
         }
         if (attr == ATTR_COLOR) {
-            glVertexAttrib4fv(_attr_locs[ATTR_COLOR], _staticColor);
+            glVertexAttrib4fv(_attr_locs[ATTR_COLOR], _static_color);
         } else if (attr == ATTR_NORMAL) {
             glVertexAttrib3f(_attr_locs[ATTR_NORMAL], 0.f, 0.f, 1.f);
         }
@@ -279,29 +276,33 @@ public:
      * Sets an individual point light's parameters.
      */
     void setLight(int i, Light lt) {
-        std::string location = "lights[" + std::to_string(i) + "].";
-        GLuint locPosition = glGetUniformLocation(program, (location + "position").c_str());
-        GLuint locDiffuse = glGetUniformLocation(program, (location + "diffuse").c_str());
-        GLuint locSpecular = glGetUniformLocation(program, (location + "specular").c_str());
-        glUniform3fv(locPosition, 1, lt.position);
-        glUniform4fv(locDiffuse, 1, lt.diffuse);
-        glUniform4fv(locSpecular, 1, lt.specular);
+        if (i >= MAX_LIGHTS)
+            return;
+        _pt_lights[i] = lt;
+        glUniform3fv(locPosition[i], 1, lt.position);
+        glUniform4fv(locDiffuse[i], 1, lt.diffuse);
+        glUniform4fv(locSpecular[i], 1, lt.specular);
+
     }
 
     void setLightPosition(int i, float * pos) {
-        std::string location = "lights[" + std::to_string(i) + "].";
-        GLuint locPosition = glGetUniformLocation(program, (location + "position").c_str());
-        glUniform3fv(locPosition, 1, pos); 
+        if (i >= MAX_LIGHTS)
+            return;
+        _pt_lights[i].position[0] = pos[0];
+        _pt_lights[i].position[1] = pos[1];
+        _pt_lights[i].position[2] = pos[2];
+        glUniform3fv(locPosition[i], 1, pos); 
     }
 
     /**
      * Sets the number of point lights to include in the calculation.
      */
     void setNumLights(int n) {
-        _numLights = n;
-        if (_lighting) {
-            GLuint locNumLights = glGetUniformLocation(program, "numLights");
-            glUniform1i(locNumLights, _numLights);
+        if (n >= MAX_LIGHTS)
+            return;
+        _num_lights = n;
+        if (gl_lighting) {
+            glUniform1i(locNumLights, _num_lights);
         }
     }
 
@@ -312,9 +313,8 @@ public:
         for (int i = 0; i < 4; i++) {
             _ambient[i] = amb[i];
         }
-        if (_lighting) {
-            GLuint locGLight = glGetUniformLocation(program, "g_ambient");
-            glUniform4fv(locGLight, 1, amb);
+        if (gl_lighting) {
+            glUniform4fv(locGlobalAmb, 1, amb);
         }
     }
 
@@ -322,10 +322,9 @@ public:
      * Disables lighting in the shader, passing through colors directly.
      */
     bool disableLight() {
-        if (_lighting) {
-            GLuint locNumLights = glGetUniformLocation(program, "numLights");
+        if (gl_lighting) {
             glUniform1i(locNumLights, 0);
-            _lighting = false;
+            gl_lighting = false;
             return true;
         }
         return false;
@@ -335,22 +334,11 @@ public:
      * Enables lighting in the shader, using the pre-set parameters.
      */
     void enableLight() {
-        if (!_lighting) {
-            GLuint locGLight = glGetUniformLocation(program, "g_ambient");
-            GLuint locNumLights = glGetUniformLocation(program, "numLights");
-            glUniform4fv(locGLight, 1, _ambient);
-            glUniform1i(locNumLights, _numLights);
-            _lighting = true;
+        if (!gl_lighting) {
+            glUniform4fv(locGlobalAmb, 1, _ambient);
+            glUniform1i(locNumLights, _num_lights);
+            gl_lighting = true;
         }
-    }
-
-    /**
-     * Prepares the shader pipeline for text rendering.
-     */
-    void setModeRenderText(double x, double y, double z) {
-        setModeRenderText();
-        disableAttribArray(ATTR_VERTEX);
-        glVertexAttrib3f(_attr_locs[ATTR_VERTEX], x, y, z);
     }
 
     /**
@@ -361,7 +349,6 @@ public:
             glDepthMask(GL_FALSE);
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            GLuint locContainsText = glGetUniformLocation(program, "containsText");
             glUniform1i(locContainsText, GL_TRUE);
             _shaderMode = RENDER_TEXT;
         }
@@ -372,15 +359,13 @@ public:
      */
     void setModeColorTexture(bool setUniforms = true) {
         if (_shaderMode == RENDER_TEXT) {
-            if (_depthTest)
+            if (gl_depth_test)
                 glDepthMask(GL_TRUE);
-            if (!_blend)
+            if (!gl_blend)
                 glDisable(GL_BLEND);
-            GLuint locContainsText = glGetUniformLocation(program, "containsText");
             glUniform1i(locContainsText, GL_FALSE);
         }
         if (_shaderMode != RENDER_COLOR_TEX) {
-            GLuint locUseColorTex = glGetUniformLocation(program, "useColorTex");
             glUniform1i(locUseColorTex, GL_TRUE);
             _shaderMode = RENDER_COLOR_TEX;
         }
@@ -391,15 +376,13 @@ public:
      */
     void setModeColor(bool setUniforms = true) {
         if (_shaderMode == RENDER_TEXT) {
-            if (_depthTest)
+            if (gl_depth_test)
                 glDepthMask(GL_TRUE);
-            if (!_blend)
+            if (!gl_blend)
                 glDisable(GL_BLEND);
-            GLuint locContainsText = glGetUniformLocation(program, "containsText");
             glUniform1i(locContainsText, GL_FALSE);
         }
         if (_shaderMode != RENDER_COLOR) {
-            GLuint locUseColorTex = glGetUniformLocation(program, "useColorTex");
             glUniform1i(locUseColorTex, GL_FALSE);
             _shaderMode = RENDER_COLOR;
         }

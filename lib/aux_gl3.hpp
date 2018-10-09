@@ -270,13 +270,7 @@ public:
     virtual void buffer() = 0;
     virtual void draw(GLenum shape) = 0;
 
-    //TODO: throw error if non-overriden function called
-    virtual void addVertex(const Vertex&) { }
-    virtual void addVertex(const VertexColor&) { }
-    virtual void addVertex(const VertexTex&) { }
-    virtual void addVertex(const VertexNorm&) { }
-    virtual void addVertex(const VertexNormColor&) { }
-    virtual void addVertex(const VertexNormTex&) { }
+    virtual size_t count() = 0;
 };
 
 template<typename T>
@@ -303,6 +297,11 @@ public:
 
     VertexBuffer(VertexBuffer&&) = default;
     VertexBuffer& operator = (VertexBuffer&&) = default;
+
+    /**
+     * Returns the number of vertices buffered on the GPU.
+     */
+    virtual size_t count() { return _buffered_size; }
 
     /**
      * Clears the buffer of all data.
@@ -405,22 +404,25 @@ public:
     }
 };
 
+class GL2PSPrinter;
+
 class GlDrawable {
 private:
     std::unordered_map<GLenum, std::unique_ptr<IVertexBuffer>> buffers[NUM_LAYOUTS];
     TextBuffer text_buffer;
 
     friend class GlBuilder;
+    friend class GL2PSPrinter;
 
     template<typename Vert>
-    IVertexBuffer& getBuffer(GLenum shape) {
+    VertexBuffer<Vert>& getBuffer(GLenum shape) {
         auto loc = buffers[Vert::layout].find(shape);
-        if (loc != buffers[Vert::layout].end()) {
-            return *(loc->second.get());
+        if (loc == buffers[Vert::layout].end()) {
+            std::unique_ptr<IVertexBuffer> new_buf(new VertexBuffer<Vert>);
+            loc = buffers[Vert::layout].emplace(shape, std::move(new_buf)).first;
         }
-        std::unique_ptr<IVertexBuffer> new_buf(new VertexBuffer<Vert>);
-        buffers[Vert::layout].emplace(shape, std::move(new_buf));
-        return *(buffers[Vert::layout][shape].get());
+        VertexBuffer<Vert> * buf = static_cast<VertexBuffer<Vert>*>(loc->second.get());
+        return *buf;
     }
 public:
 

@@ -126,7 +126,6 @@ void SetMultisample(int m);
 
 void InitFont();
 GlVisFont * GetFont();
-void DrawBitmapText(const char *text, float x, float y, float z);
 bool SetFont(const char *font_patterns[], int num_patterns, int height);
 void SetFont(const char *fn);
 

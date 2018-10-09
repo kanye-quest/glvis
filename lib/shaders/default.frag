@@ -28,10 +28,7 @@ void main()
         } else {
             color = fColor; 
         }
-        if (numLights != 0) {
-            vec3 normSgn = float(int(gl_FrontFacing) * 2 - 1) * fNormal;
-            color = blinnPhong(fPosition, normSgn, color);
-        }
+        color = blinnPhong(fPosition, fNormal, color);
     }
     gl_FragColor = color;
 }
