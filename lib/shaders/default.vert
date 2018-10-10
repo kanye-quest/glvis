@@ -19,7 +19,9 @@ varying vec3 fNormal;
 varying vec3 fPosition; 
 varying vec4 fColor; 
 varying vec2 fTexCoord; 
- 
+
+void setupClipPlane(in float dist);
+
 void main() 
 { 
     vec4 pos = modelViewMatrix * vec4(vertex, 1.0);

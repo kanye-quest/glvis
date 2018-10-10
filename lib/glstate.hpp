@@ -100,7 +100,8 @@ public:
 protected:
     render_type _shaderMode;
 
-    GLuint program;
+    GLuint default_program;
+    GLuint print_program;
     GLuint global_vao;
 
     int _w;
@@ -133,30 +134,35 @@ protected:
     GLuint locModelView, locProject, locProjectText, locNormal;
     GLuint locNumLights, locGlobalAmb;
     GLuint locPosition[MAX_LIGHTS], locDiffuse[MAX_LIGHTS], locSpecular[MAX_LIGHTS];
+
+    void initShaderState(GLuint program);
 public:
     GlMatrix modelView;
     GlMatrix projection;
 
     GlState()
-        : program(0),
-         _ambient{0.2, 0.2, 0.2, 1.0},
-         _attr_enabled{false} {
+        : default_program(0)
+        , print_program(0)
+        , global_vao(0)
+        , _ambient{0.2, 0.2, 0.2, 1.0}
+        , _attr_enabled{false} {
     }
 
     ~GlState() {
-        if (program)
-            glDeleteProgram(program);
+        if (global_vao != 0) {
+            glBindVertexArray(0);
+            glDeleteVertexArrays(1, &global_vao);
+        }
+        if (default_program)
+            glDeleteProgram(default_program);
+        if (print_program)
+            glDeleteProgram(print_program);
     }
 
     /**
      * Compiles the rendering pipeline shaders.
      */
     bool compileShaders();
-
-    /**
-     * Initializes samplers and uniforms in the shader pipeline.
-     */
-    void initShaderState();
 
     void enableDepthTest() {
         if (!gl_depth_test) {
@@ -405,8 +411,6 @@ public:
     }
 
     render_type getRenderMode() { return _shaderMode; }
-
-    GLuint getShaderProgram() { return program; }
 };
 
 #endif

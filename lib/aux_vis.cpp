@@ -89,12 +89,10 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
        if (!state->compileShaders()) {
            return 1;
        }
-       state->initShaderState();
        paletteInit();
    } else {
        wnd->clearEvents();
    }
-   state->initShaderState();
 
    paletteInit();
    InitFont();
