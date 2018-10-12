@@ -21,6 +21,7 @@ using namespace mfem;
 #include "palettes.hpp"
 #include "visual.hpp"
 #include "gl2ps.h"
+#include "gl3print.hpp"
 
 #if defined(GLVIS_USE_LIBTIFF)
 #include "tiffio.h"
@@ -937,40 +938,43 @@ void KeyS()
 void KeyCtrlP()
 {
 #ifndef __EMSCRIPTEN__
-   int state, buffsize;
-   FILE * fp;
-   GLint viewport[4] = { 0, 0, 0, 0 };
+   if (!GetGlState()->renderToFeedback()) {
+       cout << "Unable to initialize printing capture pipeline." << endl;
+       return;
+   }
    cout << "Printing the figure to GLVis.pdf... " << flush;
-
-   fp = fopen("GLVis.pdf", "wb");
-   buffsize = 0;
-   state = GL2PS_OVERFLOW;
    locscene -> print = 1;
+   FILE * fp;
+   fp = fopen("GLVis.pdf", "wb");
+   GLint viewport[4] = { 0, 0, 0, 0 };
    GetGlState()->getViewport(viewport);
-   while (state == GL2PS_OVERFLOW)
    {
-      buffsize += 1024*1024;
-      gl2psBeginPage ( "GLVis.pdf", "GLVis", viewport,
-                       GL2PS_PDF, // or GL2PS_SVG, or GL2PS_EPS
-                       GL2PS_BSP_SORT,
-                       GL2PS_SIMPLE_LINE_OFFSET |
-                       // GL2PS_NO_PS3_SHADING |
-                       // GL2PS_NO_BLENDING |
-                       // GL2PS_OCCLUSION_CULL |
-                       // GL2PS_BEST_ROOT |
-                       GL2PS_SILENT |
-                       GL2PS_DRAW_BACKGROUND,
-                       GL_RGBA, 0, NULL, 16, 16, 16, buffsize, fp, "a" );
-      gl2psPointSize(.4);
-      gl2psLineWidth(.2);
-      locscene -> Draw();
-      state = gl2psEndPage();
+       gl3::GL2PSFeedbackHook fb_capture;
+       gl3::GlDrawable::setDrawHook(&fb_capture);
+       gl2psBeginPage ( "GLVis.pdf", "GLVis", viewport,
+                        GL2PS_PDF, // or GL2PS_SVG, or GL2PS_EPS
+                        GL2PS_BSP_SORT,
+                        GL2PS_SIMPLE_LINE_OFFSET |
+                        // GL2PS_NO_PS3_SHADING |
+                        // GL2PS_NO_BLENDING |
+                        // GL2PS_OCCLUSION_CULL |
+                        // GL2PS_BEST_ROOT |
+                        GL2PS_SILENT |
+                        //GL2PS_DRAW_BACKGROUND |
+                        GL2PS_NO_BLENDING |
+                        GL2PS_NO_OPENGL_CONTEXT,
+                        GL_RGBA, 0, NULL, 16, 16, 16, 0, fp, "a" );
+       locscene -> Draw();
+       int state = gl2psEndPage();
+       cerr << "GL2PS returned code " << state << endl;
+       gl3::GlDrawable::setDrawHook(nullptr);
+       GetGlState()->renderToDefault();
    }
    locscene -> print = 0;
    fclose(fp);
 
    cout << "done" << endl;
-   locscene -> Draw();
+   wnd->signalExpose();
 #else
    cout << "Printing disabled" << endl;
 #endif

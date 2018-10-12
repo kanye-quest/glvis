@@ -62,8 +62,7 @@ private:
     std::map<int, MouseDelegate> onMouseUp;
     std::map<int, MouseDelegate> onMouseMove;
 
-    SDL_Keycode curr;
-    bool keyDown;
+    bool ctrlDown;
    
     bool requiresExpose;
     bool takeScreenshot;

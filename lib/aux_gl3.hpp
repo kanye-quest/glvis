@@ -270,7 +270,7 @@ public:
     virtual void buffer() = 0;
     virtual void draw(GLenum shape) = 0;
 
-    virtual size_t count() = 0;
+    virtual size_t count() const = 0;
 };
 
 template<typename T>
@@ -301,7 +301,7 @@ public:
     /**
      * Returns the number of vertices buffered on the GPU.
      */
-    virtual size_t count() { return _buffered_size; }
+    virtual size_t count() const { return _buffered_size; }
 
     /**
      * Clears the buffer of all data.
@@ -349,19 +349,19 @@ public:
     }
 };
 
-class TextBuffer {
-private:
-    struct _entry {
+class TextBuffer
+{
+public:
+    struct Entry {
         float rx, ry, rz;
         std::string text;
-        int w, h;
-        _entry() = default;
-        _entry(float x, float y, float z, const std::string& txt)
+        Entry() = default;
+        Entry(float x, float y, float z, const std::string& txt)
             : rx(x), ry(y), rz(z), text(txt) { }
     };
-
+private:
     std::unique_ptr<GLuint> _handle;
-    std::vector<_entry> _data;
+    std::vector<Entry> _data;
     size_t _size;
 public:
     TextBuffer() : _handle(new GLuint(0)) { };
@@ -379,16 +379,11 @@ public:
      */
     void buffer();
 
-    bool getObjectSize(const std::string& text, int& w, int& h) {
-        for (auto& e : _data) {
-            if (e.text == text) {
-                w = e.w;
-                h = e.h;
-                return true;
-            }
-        }
-        return false;
-    }
+    /**
+     * Gets the width and height of the bounding box containing the rendered
+     * text.
+     */
+    void getObjectSize(const std::string& text, int& w, int& h);
 
     /**
      * Draws the text buffered onto the GPU.
@@ -404,15 +399,23 @@ public:
     }
 };
 
-class GL2PSPrinter;
+class IDrawHook {
+public:
+    virtual void preDraw(GLenum, const IVertexBuffer *) = 0;
+    virtual void postDraw(GLenum, const IVertexBuffer *) = 0;
 
-class GlDrawable {
+    virtual void preDraw(const TextBuffer&) = 0;
+    virtual void postDraw(const TextBuffer&) = 0;
+};
+
+class GlDrawable
+{
 private:
+    static IDrawHook * buf_hook;
     std::unordered_map<GLenum, std::unique_ptr<IVertexBuffer>> buffers[NUM_LAYOUTS];
     TextBuffer text_buffer;
 
     friend class GlBuilder;
-    friend class GL2PSPrinter;
 
     template<typename Vert>
     VertexBuffer<Vert>& getBuffer(GLenum shape) {
@@ -425,6 +428,11 @@ private:
         return *buf;
     }
 public:
+    /**
+     * Sets a global draw hook to be called before and after each vertex buffer
+     * draw.
+     */
+    static void setDrawHook(IDrawHook * h) { buf_hook = h; }
 
     /**
      * Adds a string at the given position in object coordinates.
@@ -494,10 +502,22 @@ public:
     void draw() {
         for (int i = 0; i < NUM_LAYOUTS; i++) {
             for (auto& pair : buffers[i]) {
-                pair.second->draw(pair.first);
+                if (GlDrawable::buf_hook) {
+                    GlDrawable::buf_hook->preDraw(pair.first, pair.second.get());
+                    pair.second->draw(pair.first);
+                    GlDrawable::buf_hook->postDraw(pair.first, pair.second.get());
+                } else {
+                    pair.second->draw(pair.first);
+                }
             }
         }
-        text_buffer.draw();
+        if (GlDrawable::buf_hook) {
+            GlDrawable::buf_hook->preDraw(text_buffer);
+            text_buffer.draw();
+            GlDrawable::buf_hook->postDraw(text_buffer);
+        } else {
+            text_buffer.draw();
+        }
     }
 };
 

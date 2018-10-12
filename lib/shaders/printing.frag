@@ -12,5 +12,6 @@ uniform bool useClipPlane;
  
 void main()
 {
+    gl_FragColor = fColor;
 }
 )"

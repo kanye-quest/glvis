@@ -88,10 +88,10 @@ public:
     };
 
     enum shader_attrib {
-        ATTR_VERTEX,
+        ATTR_VERTEX = 0,
         ATTR_TEXT_VERTEX,
-        ATTR_COLOR,
         ATTR_NORMAL,
+        ATTR_COLOR,
         ATTR_TEXCOORD0,
         ATTR_TEXCOORD1,
         NUM_ATTRS
@@ -99,9 +99,10 @@ public:
 
 protected:
     render_type _shaderMode;
+    bool _render_feedback = false;
 
     GLuint default_program;
-    GLuint print_program;
+    GLuint feedback_program;
     GLuint global_vao;
 
     int _w;
@@ -119,12 +120,12 @@ protected:
     int _num_lights;
     float _ambient[4];
     Light _pt_lights[3];
+    Material _mat;
 
     glm::vec4 _clip_plane;
     GlMatrix _projection_cp;
 
-    //shader attrib locations
-    int _attr_locs[NUM_ATTRS];
+    //shader attribs
     bool _attr_enabled[NUM_ATTRS];
 
     //shader uniform locations
@@ -141,11 +142,15 @@ public:
     GlMatrix projection;
 
     GlState()
-        : default_program(0)
-        , print_program(0)
+        : _shaderMode(RENDER_COLOR)
+        , default_program(0)
+        , feedback_program(0)
         , global_vao(0)
         , _ambient{0.2, 0.2, 0.2, 1.0}
+        , _clip_plane(0.0, 0.0, 0.0, 0.0)
         , _attr_enabled{false} {
+        modelView.identity();
+        projection.identity();
     }
 
     ~GlState() {
@@ -155,14 +160,40 @@ public:
         }
         if (default_program)
             glDeleteProgram(default_program);
-        if (print_program)
-            glDeleteProgram(print_program);
+        if (feedback_program)
+            glDeleteProgram(feedback_program);
     }
 
     /**
      * Compiles the rendering pipeline shaders.
      */
     bool compileShaders();
+
+    /**
+     * Switches to the transform feedback rendering pipeline.
+     */
+    bool renderToFeedback() {
+        if (feedback_program == 0) {
+            return false;
+        }
+        if (_render_feedback != true) {
+            glUseProgram(feedback_program);
+            initShaderState(feedback_program);
+            _render_feedback = true;
+        }
+        return true;
+    }
+
+    /**
+     * Switches to the default rendering pipeline.
+     */
+    void renderToDefault() {
+        if (_render_feedback != false) {
+            glUseProgram(default_program);
+            initShaderState(default_program);
+            _render_feedback = false;
+        }
+    }
 
     void enableDepthTest() {
         if (!gl_depth_test) {
@@ -228,30 +259,26 @@ public:
         _static_color[2] = b;
         _static_color[3] = a;
         if (!_attr_enabled[ATTR_COLOR]) {
-            glVertexAttrib4fv(_attr_locs[ATTR_COLOR], _static_color);
+            glVertexAttrib4fv(ATTR_COLOR, _static_color);
         }
-    }
-
-    int getAttribLoc(GlState::shader_attrib attr) {
-        return _attr_locs[attr];
     }
 
     void enableAttribArray(GlState::shader_attrib attr) {
         if (!_attr_enabled[attr]) {
-            glEnableVertexAttribArray(_attr_locs[attr]);
+            glEnableVertexAttribArray(attr);
             _attr_enabled[attr] = true;
         }
     }
 
     void disableAttribArray(GlState::shader_attrib attr) {
         if (_attr_enabled[attr]) {
-            glDisableVertexAttribArray(_attr_locs[attr]);
+            glDisableVertexAttribArray(attr);
             _attr_enabled[attr] = false;
         }
         if (attr == ATTR_COLOR) {
-            glVertexAttrib4fv(_attr_locs[ATTR_COLOR], _static_color);
+            glVertexAttrib4fv(ATTR_COLOR, _static_color);
         } else if (attr == ATTR_NORMAL) {
-            glVertexAttrib3f(_attr_locs[ATTR_NORMAL], 0.f, 0.f, 1.f);
+            glVertexAttrib3f(ATTR_NORMAL, 0.f, 0.f, 1.f);
         }
     }
 
@@ -274,6 +301,7 @@ public:
      * Sets the material parameters to use in lighting calculations.
      */
     void setMaterial(Material mat) {
+        _mat = mat;
         glUniform4fv(locSpec, 1, mat.specular);
         glUniform1f(locShin, mat.shininess);
     }
@@ -341,7 +369,6 @@ public:
      */
     void enableLight() {
         if (!gl_lighting) {
-            glUniform4fv(locGlobalAmb, 1, _ambient);
             glUniform1i(locNumLights, _num_lights);
             gl_lighting = true;
         }

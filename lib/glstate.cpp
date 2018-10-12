@@ -70,12 +70,12 @@ bool linkShaders(GLuint prgm, const GLuint (&shaders)[Count]) {
     // bindings when switching programs
 
     // for OSX, attrib 0 must be bound to render an object
-    glBindAttribLocation(prgm, 0, "vertex");
-    glBindAttribLocation(prgm, 1, "textVertex");
-    glBindAttribLocation(prgm, 2, "normal");
-    glBindAttribLocation(prgm, 3, "color");
-    glBindAttribLocation(prgm, 4, "texCoord0");
-    glBindAttribLocation(prgm, 5, "texCoord1");
+    glBindAttribLocation(prgm, GlState::ATTR_VERTEX, "vertex");
+    glBindAttribLocation(prgm, GlState::ATTR_TEXT_VERTEX, "textVertex");
+    glBindAttribLocation(prgm, GlState::ATTR_NORMAL, "normal");
+    glBindAttribLocation(prgm, GlState::ATTR_COLOR, "color");
+    glBindAttribLocation(prgm, GlState::ATTR_TEXCOORD0, "texCoord0");
+    glBindAttribLocation(prgm, GlState::ATTR_TEXCOORD1, "texCoord1");
     for (int i = 0; i < Count; i++) {
         glAttachShader(prgm, shaders[i]);
     }
@@ -111,22 +111,22 @@ bool GlState::compileShaders() {
         return false;
     }
     //TODO: enable a legacy path for opengl2.1 without ext_tranform_feedback?
-    print_program = glCreateProgram();
+    feedback_program = glCreateProgram();
     const char * xfrm_varyings[] = {
         "gl_Position",
         "fColor",
         "fClipCoord",
     };
-    glTransformFeedbackVaryings(print_program, 3, xfrm_varyings,
+    glTransformFeedbackVaryings(feedback_program, 3, xfrm_varyings,
                                 GL_INTERLEAVED_ATTRIBS);
     GLuint print_pipeline[] = {
         refshaders[VS_LIGHTING],
         refshaders[VS_PRINTING],
         refshaders[FS_PRINTING]
     };
-    if (!linkShaders(print_program, print_pipeline)) {
-        glDeleteProgram(print_program);
-        print_program = 0;
+    if (!linkShaders(feedback_program, print_pipeline)) {
+        glDeleteProgram(feedback_program);
+        feedback_program = 0;
     }
     glUseProgram(default_program);
     initShaderState(default_program);
@@ -137,14 +137,11 @@ bool GlState::compileShaders() {
     return true;
 }
 
+/**
+ * Loads uniform locations and reloads previously-set uniform values for a
+ * program.
+ */
 void GlState::initShaderState(GLuint program) {
-    _attr_locs[ATTR_VERTEX] = glGetAttribLocation(program, "vertex");
-    _attr_locs[ATTR_TEXT_VERTEX] = glGetAttribLocation(program, "textVertex");
-    _attr_locs[ATTR_COLOR] = glGetAttribLocation(program, "color");
-    _attr_locs[ATTR_NORMAL] = glGetAttribLocation(program, "normal");
-    _attr_locs[ATTR_TEXCOORD0] = glGetAttribLocation(program, "texCoord0");
-    _attr_locs[ATTR_TEXCOORD1] = glGetAttribLocation(program, "texCoord1");
-
     locUseClipPlane = glGetUniformLocation(program, "useClipPlane");
     locClipPlane = glGetUniformLocation(program, "clipPlane");
     
@@ -172,14 +169,34 @@ void GlState::initShaderState(GLuint program) {
     GLuint locFontTex = glGetUniformLocation(program, "fontTex");
     glUniform1i(locColorTex, 0);
     glUniform1i(locFontTex, 1);
+    // Set render type uniforms
     locContainsText = glGetUniformLocation(program, "containsText");
-    glUniform1i(locContainsText, GL_FALSE);
     locUseColorTex = glGetUniformLocation(program, "useColorTex");
-    glUniform1i(locUseColorTex, GL_FALSE);
-    _shaderMode = RENDER_COLOR;
-    modelView.identity();
-    projection.identity();
-    loadMatrixUniforms();
-#ifndef __EMSCRIPTEN__
+    if (_shaderMode == RENDER_COLOR) {
+        glUniform1i(locContainsText, GL_FALSE);
+        glUniform1i(locUseColorTex, GL_FALSE);
+    } else if (_shaderMode == RENDER_COLOR_TEX) {
+        glUniform1i(locContainsText, GL_FALSE);
+        glUniform1i(locUseColorTex, GL_TRUE);
+    } else { //_shaderMode == RENDER_TEXT
+        glUniform1i(locContainsText, GL_TRUE);
+        glUniform1i(locUseColorTex, GL_FALSE);
+    }
+    // Set lighting uniforms
+    glUniform1i(locNumLights, gl_lighting ? _num_lights : 0);
+    glUniform4fv(locGlobalAmb, 1, _ambient);
+    glUniform4fv(locSpec, 1, _mat.specular);
+    glUniform1f(locShin, _mat.shininess);
+    for (int i = 0; i < MAX_LIGHTS; i++) {
+        glUniform3fv(locPosition[i], 1, _pt_lights[i].position);
+        glUniform4fv(locDiffuse[i], 1, _pt_lights[i].diffuse);
+        glUniform4fv(locSpecular[i], 1, _pt_lights[i].specular);
+    }
+    // Set clip plane uniforms
+#ifdef __EMSCRIPTEN__
+    glUniform1i(locUseClipPlane, gl_clip_plane);
 #endif
+    glUniform4fv(locClipPlane, 1, glm::value_ptr(_clip_plane));
+    // Set transform matrix uniforms
+    loadMatrixUniforms(true);
 }

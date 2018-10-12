@@ -46,6 +46,7 @@ SdlWindow::SdlWindow(const char * title, int w, int h)
     : onIdle(nullptr)
     , onExpose(nullptr)
     , onReshape(nullptr)
+    , ctrlDown(false)
     , requiresExpose(false)
     , takeScreenshot(false) {
 
@@ -185,6 +186,12 @@ bool SdlWindow::keyEvent(SDL_Keysym& ks) {
     if ((ks.sym > 128 || ks.sym < 32) && onKeyDown[ks.sym]) {
         onKeyDown[ks.sym](ks.mod);
         return true;
+    } else if (ctrlDown == true) {
+        onKeyDown[ks.sym](ks.mod);
+        return true;
+    }
+    if (ks.sym == SDLK_RCTRL || ks.sym == SDLK_LCTRL) {
+        ctrlDown = true;
     }
     return false;
 }
@@ -212,6 +219,12 @@ bool SdlWindow::mainIter() {
                 break;
             case SDL_KEYDOWN:
                 renderKeyEvent = keyEvent(e.key.keysym);
+                break;
+            case SDL_KEYUP:
+                if (e.key.keysym.sym == SDLK_LCTRL
+                    || e.key.keysym.sym == SDLK_RCTRL) {
+                    ctrlDown = false;
+                }
                 break;
             case SDL_TEXTINPUT:
                 renderKeyEvent = keyEvent(e.text.text[0]);

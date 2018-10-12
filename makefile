@@ -192,7 +192,7 @@ Ccc  = $(strip $(CC) $(CFLAGS) $(GL_OPTS))
 # generated with 'echo lib/*.c*'
 SOURCE_FILES = lib/aux_vis.cpp lib/aux_gl3.cpp lib/font.cpp lib/sdl.cpp \
  lib/material.cpp lib/openglvis.cpp lib/palettes.cpp lib/vsdata.cpp \
- lib/vssolution.cpp lib/vssolution3d.cpp lib/vsvector.cpp lib/vsvector3d.cpp lib/glstate.cpp
+ lib/vssolution.cpp lib/vssolution3d.cpp lib/vsvector.cpp lib/vsvector3d.cpp lib/glstate.cpp lib/gl3print.cpp
 ifeq ($(GLVIS_JS), YES)
    OBJECT_FILES = $(SOURCE_FILES:.cpp=.bc)
 else
@@ -203,7 +203,7 @@ endif
 # generated with 'echo lib/*.h*'
 HEADER_FILES = lib/aux_vis.hpp lib/aux_gl3.hpp lib/font.hpp lib/sdl.hpp lib/material.hpp \
  lib/openglvis.hpp lib/palettes.hpp lib/visual.hpp \
- lib/vsdata.hpp lib/vssolution.hpp lib/vssolution3d.hpp lib/vsvector.hpp lib/vsvector3d.hpp lib/glstate.hpp
+ lib/vsdata.hpp lib/vssolution.hpp lib/vssolution3d.hpp lib/vsvector.hpp lib/vsvector3d.hpp lib/glstate.hpp lib/gl3print.hpp
 
 EMCC_OPTS = --bind --llvm-lto 1 -s ALLOW_MEMORY_GROWTH=1 -s MODULARIZE=1 -s SINGLE_FILE=1 --no-heap-copy
 

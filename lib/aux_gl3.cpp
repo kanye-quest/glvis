@@ -19,15 +19,15 @@ using namespace gl3;
 
 void Vertex::setupAttribLayout() {
     GetGlState()->setModeColor();
-    int loc_vtx = GetGlState()->getAttribLoc(GlState::ATTR_VERTEX);
+    int loc_vtx = GlState::ATTR_VERTEX;
     GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
     glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, coord));
 }
 
 void VertexColor::setupAttribLayout() {
     GetGlState()->setModeColor();
-    int loc_vtx = GetGlState()->getAttribLoc(GlState::ATTR_VERTEX);
-    int loc_color = GetGlState()->getAttribLoc(GlState::ATTR_COLOR);
+    int loc_vtx = GlState::ATTR_VERTEX;
+    int loc_color = GlState::ATTR_COLOR;
     GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
     GetGlState()->enableAttribArray(GlState::ATTR_COLOR);
     glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(VertexColor), (void*)(void*)offsetof(VertexColor, coord));
@@ -40,8 +40,8 @@ void VertexColor::clearAttribLayout() {
 
 void VertexTex::setupAttribLayout() {
     GetGlState()->setModeColorTexture();
-    int loc_vtx = GetGlState()->getAttribLoc(GlState::ATTR_VERTEX);
-    int loc_tex = GetGlState()->getAttribLoc(GlState::ATTR_TEXCOORD0);
+    int loc_vtx = GlState::ATTR_VERTEX;
+    int loc_tex = GlState::ATTR_TEXCOORD0;
     GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
     GetGlState()->enableAttribArray(GlState::ATTR_TEXCOORD0);
     glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(VertexTex), (void*)offsetof(VertexTex, coord));
@@ -54,8 +54,8 @@ void VertexTex::clearAttribLayout() {
 
 void VertexNorm::setupAttribLayout() {
     GetGlState()->setModeColor();
-    int loc_vtx = GetGlState()->getAttribLoc(GlState::ATTR_VERTEX);
-    int loc_nor = GetGlState()->getAttribLoc(GlState::ATTR_NORMAL);
+    int loc_vtx = GlState::ATTR_VERTEX;
+    int loc_nor = GlState::ATTR_NORMAL;
     GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
     GetGlState()->enableAttribArray(GlState::ATTR_NORMAL);
     glVertexAttribPointer(loc_vtx, 3, GL_FLOAT, GL_FALSE, sizeof(VertexNorm), (void*)offsetof(VertexNorm, coord));
@@ -68,9 +68,9 @@ void VertexNorm::clearAttribLayout() {
 
 void VertexNormColor::setupAttribLayout() {
     GetGlState()->setModeColor();
-    int loc_vtx = GetGlState()->getAttribLoc(GlState::ATTR_VERTEX);
-    int loc_nor = GetGlState()->getAttribLoc(GlState::ATTR_NORMAL);
-    int loc_color = GetGlState()->getAttribLoc(GlState::ATTR_COLOR);
+    int loc_vtx = GlState::ATTR_VERTEX;
+    int loc_nor = GlState::ATTR_NORMAL;
+    int loc_color = GlState::ATTR_COLOR;
     GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
     GetGlState()->enableAttribArray(GlState::ATTR_NORMAL);
     GetGlState()->enableAttribArray(GlState::ATTR_COLOR);
@@ -86,9 +86,9 @@ void VertexNormColor::clearAttribLayout() {
 
 void VertexNormTex::setupAttribLayout() {
     GetGlState()->setModeColorTexture();
-    int loc_vtx = GetGlState()->getAttribLoc(GlState::ATTR_VERTEX);
-    int loc_nor = GetGlState()->getAttribLoc(GlState::ATTR_NORMAL);
-    int loc_tex = GetGlState()->getAttribLoc(GlState::ATTR_TEXCOORD0);
+    int loc_vtx = GlState::ATTR_VERTEX;
+    int loc_nor = GlState::ATTR_NORMAL;
+    int loc_tex = GlState::ATTR_TEXCOORD0;
     GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
     GetGlState()->enableAttribArray(GlState::ATTR_NORMAL);
     GetGlState()->enableAttribArray(GlState::ATTR_TEXCOORD0);
@@ -108,8 +108,6 @@ void TextBuffer::buffer() {
     float tex_h = GetFont()->getAtlasHeight();
     for (auto& e : _data) {
         float x = 0.f, y = 0.f;
-        e.w = 0;
-        e.h = 0;
         for (char c : e.text) {
             GlVisFont::glyph g = GetFont()->GetTexChar(c);
             float cur_x = x + g.bear_x;
@@ -128,8 +126,6 @@ void TextBuffer::buffer() {
                 e.rx, e.ry, e.rz, cur_x + g.w, -cur_y - g.h, g.tex_x + g.w / tex_w, g.h / tex_h, 0
             };
             buf_data.insert(buf_data.end(), tris, tris + 8 * 6);
-            e.w = (int)(cur_x + g.w);
-            e.h = std::max(e.h, (int)g.h);
         }
     }
     _size = buf_data.size() / 8;
@@ -141,6 +137,22 @@ void TextBuffer::buffer() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+void TextBuffer::getObjectSize(const std::string& text, int& w, int& h) {
+    float x = 0.f, y = 0.f;
+    w = 0.f, h = 0.f;
+    for (char c : text) {
+        GlVisFont::glyph g = GetFont()->GetTexChar(c);
+        float cur_x = x + g.bear_x;
+        float cur_y = -y - g.bear_y;
+        x += g.adv_x;
+        y += g.adv_y;
+        if (!g.w || !g.h) {
+            continue;
+        }
+        w = (int)(cur_x + g.w);
+        h = std::max(h, (int)g.h);
+    }
+}
 
 void TextBuffer::draw() {
     if (_size == 0 || *_handle == 0) {
@@ -148,9 +160,9 @@ void TextBuffer::draw() {
     }
     GetGlState()->setModeRenderText();
     
-    int loc_rast_vtx = GetGlState()->getAttribLoc(GlState::ATTR_VERTEX);
-    int loc_txt_vtx = GetGlState()->getAttribLoc(GlState::ATTR_TEXT_VERTEX);
-    int loc_tex = GetGlState()->getAttribLoc(GlState::ATTR_TEXCOORD1);
+    int loc_rast_vtx = GlState::ATTR_VERTEX;
+    int loc_txt_vtx = GlState::ATTR_TEXT_VERTEX;
+    int loc_tex = GlState::ATTR_TEXCOORD1;
 
     GetGlState()->enableAttribArray(GlState::ATTR_VERTEX);
     GetGlState()->enableAttribArray(GlState::ATTR_TEXT_VERTEX);
@@ -169,6 +181,8 @@ void TextBuffer::draw() {
 
     GetGlState()->setModeColor();
 }
+
+IDrawHook * GlDrawable::buf_hook = nullptr;
 
 void GlDrawable::addCone(float x, float y, float z,
                          float vx, float vy, float vz,
