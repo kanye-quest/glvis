@@ -12,8 +12,10 @@
 #ifndef __GLVIS_GL3PRINT__
 #define __GLVIS_GL3PRINT__
 
+#include "aux_vis.hpp"
 #include "glstate.hpp"
 #include "aux_gl3.hpp"
+#include "gl2ps.h"
 
 #include <iostream>
 
@@ -98,6 +100,20 @@ public:
 
     void preDraw(const TextBuffer& t) {
         glEnable(GL_RASTERIZER_DISCARD);
+        GLint vp[4];
+        GetGlState()->getViewport(vp);
+        for (const auto& entry : t) {
+
+            glm::vec3 raster = glm::project(glm::vec3(entry.rx, entry.ry, entry.rz),
+                                            GetGlState()->modelView.mtx,
+                                            GetGlState()->projection.mtx,
+                                            glm::vec4(0, 0, vp[2], vp[3]));
+            GL2PSvertex v = { raster.x, raster.y, raster.z,
+                              0, 0, 0, 1 };
+            gl2psForceRasterPos(&v);
+            gl2psText(entry.text.c_str(), "Times", 8);
+        }
+
     }
 
     void postDraw(const TextBuffer& t) {

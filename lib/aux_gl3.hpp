@@ -359,6 +359,8 @@ public:
         Entry(float x, float y, float z, const std::string& txt)
             : rx(x), ry(y), rz(z), text(txt) { }
     };
+    typedef std::vector<Entry>::iterator Iterator;
+    typedef std::vector<Entry>::const_iterator ConstIterator;
 private:
     std::unique_ptr<GLuint> _handle;
     std::vector<Entry> _data;
@@ -370,9 +372,24 @@ public:
             glDeleteBuffers(1, _handle.get());
     }
 
+    /**
+     * Adds a text element at the specified local space (pre-transform) coordinates.
+     */
     void addText(float x, float y, float z, const std::string& text) {
         _data.emplace_back(x, y, z, text);
     }
+
+    /**
+     * Gets an iterator referencing the first text entry.
+     */
+    Iterator begin() { return _data.begin(); }
+    ConstIterator begin() const { return _data.begin(); }
+
+    /**
+     * Gets an iterator pointing to the last text entry.
+     */
+    Iterator end() { return _data.end(); }
+    ConstIterator end() const { return _data.end(); }
 
     /**
      * Buffers the text onto the GPU.

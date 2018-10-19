@@ -966,7 +966,6 @@ void KeyCtrlP()
                         GL_RGBA, 0, NULL, 16, 16, 16, 0, fp, "a" );
        locscene -> Draw();
        int state = gl2psEndPage();
-       cerr << "GL2PS returned code " << state << endl;
        gl3::GlDrawable::setDrawHook(nullptr);
        GetGlState()->renderToDefault();
    }

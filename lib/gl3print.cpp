@@ -11,7 +11,6 @@
 
 #include "gl3print.hpp"
 #include "aux_vis.hpp"
-#include "gl2ps.h"
 
 namespace gl3
 {
@@ -40,7 +39,7 @@ void processTriangleTransformFeedback(FeedbackVertex * buf, size_t numVerts) {
     float half_w = (vp[2] - vp[0]) * 0.5f,
           half_h = (vp[3] - vp[1]) * 0.5f;
 
-    for (int i = 0; i < numVerts; i += 3) {
+    for (size_t i = 0; i < numVerts; i += 3) {
         if (buf[i].clipCoord < 0.f
             && buf[i+1].clipCoord < 0.f
             && buf[i+2].clipCoord < 0.f) {
@@ -61,7 +60,7 @@ void processLineTransformFeedback(FeedbackVertex * buf, size_t numVerts) {
     float half_w = (vp[2] - vp[0]) * 0.5f,
           half_h = (vp[3] - vp[1]) * 0.5f;
 
-    for (int i = 0; i < numVerts; i += 2) {
+    for (size_t i = 0; i < numVerts; i += 2) {
         GL2PSvertex line_vtx[2];
         if (buf[i].clipCoord < 0.f && buf[i+1].clipCoord < 0.f) {
             //outside of clip plane;

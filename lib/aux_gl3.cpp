@@ -138,14 +138,12 @@ void TextBuffer::buffer() {
 }
 
 void TextBuffer::getObjectSize(const std::string& text, int& w, int& h) {
-    float x = 0.f, y = 0.f;
+    float x = 0.f;
     w = 0.f, h = 0.f;
     for (char c : text) {
         GlVisFont::glyph g = GetFont()->GetTexChar(c);
         float cur_x = x + g.bear_x;
-        float cur_y = -y - g.bear_y;
         x += g.adv_x;
-        y += g.adv_y;
         if (!g.w || !g.h) {
             continue;
         }
