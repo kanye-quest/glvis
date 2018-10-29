@@ -17,33 +17,16 @@
 #include <map>
 #include "platform_gl.hpp"
 
-
-#define AUX_MOUSESTATUS		3
-
-#define AUX_MOUSEDOWN	16
-#define AUX_MOUSEUP	32
-#define AUX_MOUSELOC	64
-
-#define AUX_MOUSEX		0
-#define AUX_MOUSEY		1
-
-#define	AUX_LEFTBUTTON		1
-#define	AUX_RIGHTBUTTON		2
-#define	AUX_MIDDLEBUTTON	4
-
-#define AUX_LEFT SDLK_LEFT
-#define AUX_RIGHT SDLK_RIGHT
-
 struct EventInfo {
-    GLint event;
-    GLint data[4];
+    GLint mouse_x;
+    GLint mouse_y;
+    SDL_Keymod keymod;
 };
 
 typedef void (*MouseDelegate)(EventInfo*);
 typedef std::function<void(GLenum)> KeyDelegate;
 typedef void (*WindowDelegate)(int, int);
 typedef void (*Delegate)();
-
 
 class SdlWindow
 {

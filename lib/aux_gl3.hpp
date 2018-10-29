@@ -188,12 +188,11 @@ public:
             //previous vertex
             if (count == 0) {
                 saved[0] = curr;
-                saved[1] = curr;
             } else {
                 saveVertex(saved[1]);
                 saveVertex(curr);
-                saved[1] = curr;
             }
+            saved[1] = curr;
         } else if (render_as == GL_QUADS) {
             if (count % 4 == 3) {
                 //split on 0-2 diagonal
@@ -435,14 +434,14 @@ private:
     friend class GlBuilder;
 
     template<typename Vert>
-    VertexBuffer<Vert>& getBuffer(GLenum shape) {
+    VertexBuffer<Vert> * getBuffer(GLenum shape) {
         auto loc = buffers[Vert::layout].find(shape);
         if (loc == buffers[Vert::layout].end()) {
             std::unique_ptr<IVertexBuffer> new_buf(new VertexBuffer<Vert>);
             loc = buffers[Vert::layout].emplace(shape, std::move(new_buf)).first;
         }
         VertexBuffer<Vert> * buf = static_cast<VertexBuffer<Vert>*>(loc->second.get());
-        return *buf;
+        return buf;
     }
 public:
     /**
@@ -460,25 +459,25 @@ public:
 
     template<typename Vert>
     void addLine(const Vert& v1, const Vert& v2) {
-        getBuffer<Vert>(GL_LINES).addVertex(v1);
-        getBuffer<Vert>(GL_LINES).addVertex(v2);
+        getBuffer<Vert>(GL_LINES)->addVertex(v1);
+        getBuffer<Vert>(GL_LINES)->addVertex(v2);
     }
 
     template<typename Vert>
     void addTriangle(const Vert& v1, const Vert& v2, const Vert& v3) {
-        getBuffer<Vert>(GL_TRIANGLES).addVertex(v1);
-        getBuffer<Vert>(GL_TRIANGLES).addVertex(v2);
-        getBuffer<Vert>(GL_TRIANGLES).addVertex(v3);
+        getBuffer<Vert>(GL_TRIANGLES)->addVertex(v1);
+        getBuffer<Vert>(GL_TRIANGLES)->addVertex(v2);
+        getBuffer<Vert>(GL_TRIANGLES)->addVertex(v3);
     }
 
     template<typename Vert>
     void addQuad(const Vert& v1, const Vert& v2, const Vert& v3, const Vert& v4) {
-        getBuffer<Vert>(GL_TRIANGLES).addVertex(v1);
-        getBuffer<Vert>(GL_TRIANGLES).addVertex(v2);
-        getBuffer<Vert>(GL_TRIANGLES).addVertex(v3);
-        getBuffer<Vert>(GL_TRIANGLES).addVertex(v1);
-        getBuffer<Vert>(GL_TRIANGLES).addVertex(v3);
-        getBuffer<Vert>(GL_TRIANGLES).addVertex(v4);
+        getBuffer<Vert>(GL_TRIANGLES)->addVertex(v1);
+        getBuffer<Vert>(GL_TRIANGLES)->addVertex(v2);
+        getBuffer<Vert>(GL_TRIANGLES)->addVertex(v3);
+        getBuffer<Vert>(GL_TRIANGLES)->addVertex(v1);
+        getBuffer<Vert>(GL_TRIANGLES)->addVertex(v3);
+        getBuffer<Vert>(GL_TRIANGLES)->addVertex(v4);
     }
 
     void addCone(float x, float y, float z,
@@ -521,10 +520,10 @@ public:
             for (auto& pair : buffers[i]) {
                 if (GlDrawable::buf_hook) {
                     GlDrawable::buf_hook->preDraw(pair.first, pair.second.get());
-                    pair.second->draw(pair.first);
+                }
+                pair.second->draw(pair.first);
+                if (GlDrawable::buf_hook) {
                     GlDrawable::buf_hook->postDraw(pair.first, pair.second.get());
-                } else {
-                    pair.second->draw(pair.first);
                 }
             }
         }

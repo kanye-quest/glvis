@@ -255,24 +255,24 @@ void GlBuilder::saveVertex(const GlBuilder::_vertex& v) {
     if (!use_norm) {
         if (use_color) {
             parent_buf->getBuffer<VertexColor>(dst_buf)
-                .addVertex(VertexColor{v.coords, v.color});
+                      ->addVertex(VertexColor{v.coords, v.color});
         } else if (use_tex) {
             parent_buf->getBuffer<VertexTex>(dst_buf)
-                .addVertex(VertexTex{v.coords, v.texcoord});
+                      ->addVertex(VertexTex{v.coords, v.texcoord});
         } else {
             parent_buf->getBuffer<Vertex>(dst_buf)
-                .addVertex(Vertex{v.coords});
+                      ->addVertex(Vertex{v.coords});
         }
     } else {
         if (use_color) {
             parent_buf->getBuffer<VertexNormColor>(dst_buf)
-                        .addVertex(VertexNormColor{v.coords, v.norm, v.color});
+                      ->addVertex(VertexNormColor{v.coords, v.norm, v.color});
         } else if (use_tex) {
             parent_buf->getBuffer<VertexNormTex>(dst_buf)
-                        .addVertex(VertexNormTex{v.coords, v.norm, v.texcoord});
+                      ->addVertex(VertexNormTex{v.coords, v.norm, v.texcoord});
         } else {
             parent_buf->getBuffer<VertexNorm>(dst_buf)
-                        .addVertex(VertexNorm{v.coords, v.norm});
+                      ->addVertex(VertexNorm{v.coords, v.norm});
         }
     }
 }

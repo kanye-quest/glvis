@@ -11,6 +11,7 @@
 
 #include "platform_gl.hpp"
 #include <iostream>
+#include <chrono>
 #include "sdl.hpp"
 #include <SDL2/SDL_syswm.h>
 #include "visual.hpp"
@@ -135,23 +136,19 @@ void SdlWindow::windowEvent(SDL_WindowEvent& ew) {
 }
 
 void SdlWindow::motionEvent(SDL_MouseMotionEvent& em) {
-    EventInfo info;
-    info.event = AUX_MOUSELOC;
-    info.data[AUX_MOUSEX] = em.x;
-    info.data[AUX_MOUSEY] = em.y;
-    info.data[2] = SDL_GetModState();
+    EventInfo info = {
+        em.x, em.y,
+        SDL_GetModState()
+    };
     if (em.state & SDL_BUTTON_LMASK) {
-        info.data[AUX_MOUSESTATUS] = AUX_LEFTBUTTON;
         if (onMouseMove[SDL_BUTTON_LEFT]) {
             onMouseMove[SDL_BUTTON_LEFT](&info);
         }
     } else if (em.state & SDL_BUTTON_RMASK) {
-        info.data[AUX_MOUSESTATUS] = AUX_RIGHTBUTTON;
         if (onMouseMove[SDL_BUTTON_RIGHT]) {
             onMouseMove[SDL_BUTTON_RIGHT](&info); 
         }
     } else if (em.state & SDL_BUTTON_MMASK) {
-        info.data[AUX_MOUSESTATUS] = AUX_MIDDLEBUTTON;
         if (onMouseMove[SDL_BUTTON_MIDDLE]) {
             onMouseMove[SDL_BUTTON_MIDDLE](&info); 
         }
@@ -160,31 +157,28 @@ void SdlWindow::motionEvent(SDL_MouseMotionEvent& em) {
 
 void SdlWindow::mouseEventDown(SDL_MouseButtonEvent& eb) {
     if (onMouseDown[eb.button]) {
-        EventInfo info;
-        info.event = AUX_MOUSEDOWN;
-        info.data[AUX_MOUSEX] = eb.x;
-        info.data[AUX_MOUSEY] = eb.y;
-        info.data[2] = SDL_GetModState();
-        info.data[AUX_MOUSESTATUS] = eb.button;
+        EventInfo info = {
+            eb.x, eb.y,
+            SDL_GetModState()
+        };
         onMouseDown[eb.button](&info); 
     }
 }
 
 void SdlWindow::mouseEventUp(SDL_MouseButtonEvent& eb) {
     if (onMouseUp[eb.button]) {
-        EventInfo info;
-        info.event = AUX_MOUSEUP;
-        info.data[AUX_MOUSEX] = eb.x;
-        info.data[AUX_MOUSEY] = eb.y;
-        info.data[2] = SDL_GetModState();
-        info.data[AUX_MOUSESTATUS] = eb.button;
+        EventInfo info = {
+            eb.x, eb.y,
+            SDL_GetModState()
+        };
         onMouseUp[eb.button](&info);
     }
 }
 
 bool SdlWindow::keyEvent(SDL_Keysym& ks) {
-    if ((ks.sym > 128 || ks.sym < 32) && onKeyDown[ks.sym]) {
-        onKeyDown[ks.sym](ks.mod);
+    if (ks.sym > 128 || ks.sym < 32) {
+        if (onKeyDown[ks.sym])
+            onKeyDown[ks.sym](ks.mod);
         return true;
     } else if (ctrlDown == true) {
         onKeyDown[ks.sym](ks.mod);
@@ -284,6 +278,8 @@ void SdlWindow::mainLoop() {
             Screenshot(screenshot_file.c_str());
             takeScreenshot = false;
         }
+        // sleep for 2 seconds to avoid pegging CPU at 100%
+        SDL_Delay(2);
     }
 #endif
 }

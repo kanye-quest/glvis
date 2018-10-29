@@ -504,8 +504,8 @@ void LeftButtonDown (EventInfo *event)
    locscene -> spinning = 0;
    RemoveIdleFunc(MainLoop);
 
-   oldx = event->data[AUX_MOUSEX];
-   oldy = event->data[AUX_MOUSEY];
+   oldx = event->mouse_x;
+   oldy = event->mouse_y;
 
    ComputeSphereAngles(oldx, oldy, sph_u, sph_t);
 
@@ -519,13 +519,13 @@ void LeftButtonDown (EventInfo *event)
 
 void LeftButtonLoc (EventInfo *event)
 {
-   GLint newx = event->data[AUX_MOUSEX];
-   GLint newy = event->data[AUX_MOUSEY];
+   GLint newx = event->mouse_x;
+   GLint newy = event->mouse_y;
    int sendexpose = 1;
 
-   if (event->data[2] & KMOD_CTRL)
+   if (event->keymod & KMOD_CTRL)
    {
-      if (event->data[2] & KMOD_SHIFT)
+      if (event->keymod & KMOD_SHIFT)
       {
          locscene->PreRotate(double(newx-oldx)/2, 0.0, 0.0, 1.0);
       }
@@ -551,11 +551,11 @@ void LeftButtonLoc (EventInfo *event)
          locscene->rotmat = state->modelView.mtx;
       }
    }
-   else if (event->data[2] & KMOD_ALT)
+   else if (event->keymod & KMOD_ALT)
    {
       locscene->Rotate(double(newx-oldx)/2, 0.0, 0.0, 1.0);
    }
-   else if (event->data[2] & KMOD_SHIFT)
+   else if (event->keymod & KMOD_SHIFT)
    {
       locscene->Rotate(double(newx-oldx)/2, double(newy-oldy)/2);
    }
@@ -576,20 +576,20 @@ void LeftButtonLoc (EventInfo *event)
 
 void LeftButtonUp (EventInfo *event)
 {
-   GLint newx = event->data[AUX_MOUSEX];
-   GLint newy = event->data[AUX_MOUSEY];
+   GLint newx = event->mouse_x;
+   GLint newy = event->mouse_y;
 
    xang = (newx-startx)/5.0;
    yang = (newy-starty)/5.0;
 
-   if ( (event->data[2] & KMOD_SHIFT) && (xang != 0.0 || yang != 0.0) )
+   if ( (event->keymod & KMOD_SHIFT) && (xang != 0.0 || yang != 0.0) )
    {
       locscene -> spinning = 1;
       AddIdleFunc(MainLoop);
       if (xang > 20) { xang = 20; } if (xang < -20) { xang = -20; }
       if (yang > 20) { yang = 20; } if (yang < -20) { yang = -20; }
 
-      if (event->data[2] & KMOD_CTRL)
+      if (event->keymod & KMOD_CTRL)
       {
          constrained_spinning = 1;
       }
@@ -602,16 +602,16 @@ void LeftButtonUp (EventInfo *event)
 
 void MiddleButtonDown (EventInfo *event)
 {
-   startx = oldx = event->data[AUX_MOUSEX];
-   starty = oldy = event->data[AUX_MOUSEY];
+   startx = oldx = event->mouse_x;
+   starty = oldy = event->mouse_y;
 }
 
 void MiddleButtonLoc (EventInfo *event)
 {
-   GLint newx = event->data[AUX_MOUSEX];
-   GLint newy = event->data[AUX_MOUSEY];
+   GLint newx = event->mouse_x;
+   GLint newy = event->mouse_y;
 
-   if ( !( event->data[2] & KMOD_CTRL ) )
+   if ( !( event->keymod & KMOD_CTRL ) )
    {
       GLint vp[4];
       double TrX, TrY, scale;
@@ -645,7 +645,7 @@ void MiddleButtonLoc (EventInfo *event)
       double dx = double(newx-oldx)/400;
       double dy = double(oldy-newy)/400;
 
-      if (event->data[2] & KMOD_SHIFT)  // ctrl + shift
+      if (event->keymod & KMOD_SHIFT)  // ctrl + shift
       {
          double sx = double(newx-startx)/400;
          double sy = double(starty-newy)/400;
@@ -656,7 +656,7 @@ void MiddleButtonLoc (EventInfo *event)
          locscene->cam.TurnUpDown(-sy);
          locscene->cam.TurnLeftRight(sx);
       }
-      else if (event->data[2] & KMOD_ALT) // ctrl + alt
+      else if (event->keymod & KMOD_ALT) // ctrl + alt
       {
          locscene->cam.MoveForwardBackward(dy);
          locscene->cam.TiltLeftRight(-dx);
@@ -679,16 +679,16 @@ void MiddleButtonUp (EventInfo *event)
 
 void RightButtonDown (EventInfo *event)
 {
-   startx = oldx = event->data[AUX_MOUSEX];
-   starty = oldy = event->data[AUX_MOUSEY];
+   startx = oldx = event->mouse_x;
+   starty = oldy = event->mouse_y;
 }
 
 void RightButtonLoc (EventInfo *event)
 {
-   GLint newx = event->data[AUX_MOUSEX];
-   GLint newy = event->data[AUX_MOUSEY];
+   GLint newx = event->mouse_x;
+   GLint newy = event->mouse_y;
 
-   if (event->data[2] & KMOD_SHIFT)
+   if (event->keymod & KMOD_SHIFT)
    {
       //glLoadIdentity();
       // GLfloat light[] = {newx,-newy, sqrt((float)(newx*newx+newy*newy)), 0.0 };
@@ -717,7 +717,7 @@ void RightButtonLoc (EventInfo *event)
       GLfloat light[] = { float(x), float(y), float(z), 0.0f };
       state->setLightPosition(0, light);
    }
-   else if ( !( event->data[2] & KMOD_CTRL ) )
+   else if ( !( event->keymod & KMOD_CTRL ) )
    {
       locscene -> Zoom (exp ( double (oldy-newy) / 100 ));
    }
