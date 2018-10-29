@@ -399,7 +399,7 @@ public:
      * Gets the width and height of the bounding box containing the rendered
      * text.
      */
-    void getObjectSize(const std::string& text, int& w, int& h);
+    static void getObjectSize(const std::string& text, int& w, int& h);
 
     /**
      * Draws the text buffered onto the GPU.

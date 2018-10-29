@@ -11,6 +11,7 @@
 
 #include "gl3print.hpp"
 #include "aux_vis.hpp"
+#include <cmath>
 
 namespace gl3
 {
@@ -40,15 +41,71 @@ void processTriangleTransformFeedback(FeedbackVertex * buf, size_t numVerts) {
           half_h = (vp[3] - vp[1]) * 0.5f;
 
     for (size_t i = 0; i < numVerts; i += 3) {
-        if (buf[i].clipCoord < 0.f
-            && buf[i+1].clipCoord < 0.f
-            && buf[i+2].clipCoord < 0.f) {
-            //TODO: split triangles lying in between clip plane
-            continue;
-        }
         GL2PSvertex tri_vtx[3];
-        for (int j = 0; j < 3; j++) {
-            tri_vtx[j] = VertFBtoGL2PS(buf[i+j], vp, half_w, half_h);
+        if (!GetGlState()->isClipPlaneEnabled()
+            || (buf[i].clipCoord >= 0.f
+                && buf[i+1].clipCoord >= 0.f
+                && buf[i+2].clipCoord >= 0.f)) {
+            for (int j = 0; j < 3; j++) {
+                tri_vtx[j] = VertFBtoGL2PS(buf[i+j], vp, half_w, half_h);
+            }
+        } else if (buf[i].clipCoord < 0.f
+                    && buf[i+1].clipCoord < 0.f
+                    && buf[i+2].clipCoord < 0.f) {
+            continue;
+        } else {
+            //clip through middle of triangle
+            for (int j = 0; j < 3; j++) {
+                int i_a = i+j;
+                int i_b = i+((j+1) % 3);
+                int i_c = i+((j+2) % 3);
+                if ((buf[i_a].clipCoord < 0.f) == (buf[i_b].clipCoord < 0.f)) {
+                    //pts a, b are on same side of clip plane
+                    //compute clip pts
+                    FeedbackVertex n[2];
+                    for (int ci = 0; ci < 4; ci++) {
+                        //a --- n_0 --- c
+                        float clip_a = fabs(buf[i_a].clipCoord);
+                        float clip_b = fabs(buf[i_b].clipCoord);
+                        float clip_c = fabs(buf[i_c].clipCoord);
+                        n[0].pos[ci] = (buf[i_a].pos[ci] * clip_a
+                                        + buf[i_c].pos[ci] * clip_c)
+                                        / (clip_a + clip_c);
+                        n[0].color[ci] = (buf[i_a].color[ci] * clip_a
+                                        + buf[i_c].color[ci] * clip_c)
+                                        / (clip_a + clip_c);
+                        //b --- n_1 --- c
+                        n[1].pos[ci] = (buf[i_b].pos[ci] * clip_b
+                                        + buf[i_c].pos[ci] * clip_c)
+                                        / (clip_b + clip_c);
+                        n[1].color[ci] = (buf[i_b].color[ci] * clip_b
+                                        + buf[i_c].color[ci] * clip_c)
+                                        / (clip_b + clip_c);
+                    }
+                    if (buf[i_c].clipCoord < 0.f) {
+                        //pts a, b are in clip plane
+                        //create quadrilateral a -- n_0 -- n_1 -- b
+                        GL2PSvertex quad[4] = {
+                            VertFBtoGL2PS(buf[i_a], vp, half_w, half_h),
+                            VertFBtoGL2PS(n[0], vp, half_w, half_h),
+                            VertFBtoGL2PS(n[1], vp, half_w, half_h),
+                            VertFBtoGL2PS(buf[i_b], vp, half_w, half_h)
+                        };
+                        // split along vtx 0-2
+                        gl2psAddPolyPrimitive(GL2PS_TRIANGLE, 3, quad, 0, 0.f, 0.f, 0xffff, 1, 1, 0, 0, 0);
+                        tri_vtx[0] = quad[0];
+                        tri_vtx[1] = quad[2];
+                        tri_vtx[2] = quad[3];
+                    } else {
+                        //pt c is in clip plane
+                        //add triangle c -- n_0 -- n_1
+                        tri_vtx[0] = VertFBtoGL2PS(buf[i_c], vp, half_w, half_h);
+                        tri_vtx[1] = VertFBtoGL2PS(n[0], vp, half_w, half_h);
+                        tri_vtx[2] = VertFBtoGL2PS(n[1], vp, half_w, half_h);
+                    }
+                    break;
+                }
+            }
         }
         gl2psAddPolyPrimitive(GL2PS_TRIANGLE, 3, tri_vtx, 0, 0.f, 0.f, 0xffff, 1, 1, 0, 0, 0);
     }
@@ -62,12 +119,13 @@ void processLineTransformFeedback(FeedbackVertex * buf, size_t numVerts) {
 
     for (size_t i = 0; i < numVerts; i += 2) {
         GL2PSvertex line_vtx[2];
-        if (buf[i].clipCoord < 0.f && buf[i+1].clipCoord < 0.f) {
-            //outside of clip plane;
-            continue;
-        } else if (buf[i].clipCoord >= 0.f && buf[i+1].clipCoord >= 0.f) {
+        if (!GetGlState()->isClipPlaneEnabled() ||
+            (buf[i].clipCoord >= 0.f && buf[i+1].clipCoord >= 0.f)) {
             line_vtx[0] = VertFBtoGL2PS(buf[i], vp, half_w, half_h);
             line_vtx[1] = VertFBtoGL2PS(buf[i+1], vp, half_w, half_h);
+        } else if (buf[i].clipCoord < 0.f && buf[i+1].clipCoord < 0.f) {
+            //outside of clip plane;
+            continue;
         } else {
             int i_a, i_b;
             if (buf[i].clipCoord < 0.f) {

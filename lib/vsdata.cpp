@@ -539,10 +539,10 @@ void VisualizationSceneScalarData::DrawCaption()
 
    int width = 0, height = 0;
    
-   gl3::TextBuffer capt_buf;
+   gl3::GlDrawable capt_buf;
    capt_buf.addText(0, 0, 0, caption);
    capt_buf.buffer();
-   capt_buf.getObjectSize(caption, width, height);
+   gl3::TextBuffer::getObjectSize(caption, width, height);
    
    GlMatrix proj_save = gl->projection;
    GlMatrix mv_save = gl->modelView;

@@ -169,18 +169,19 @@ void SdlWindow::mouseEventUp(SDL_MouseButtonEvent& eb) {
 }
 
 bool SdlWindow::keyEvent(SDL_Keysym& ks) {
+    bool handled = false;
     if (ks.sym > 128 || ks.sym < 32) {
         if (onKeyDown[ks.sym])
             onKeyDown[ks.sym](ks.mod);
-        return true;
+        handled = true;
     } else if (ctrlDown == true) {
         onKeyDown[ks.sym](ks.mod);
-        return true;
+        handled = true;
     }
     if (ks.sym == SDLK_RCTRL || ks.sym == SDLK_LCTRL) {
         ctrlDown = true;
     }
-    return false;
+    return handled;
 }
 
 bool SdlWindow::keyEvent(char c) {

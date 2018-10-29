@@ -438,6 +438,8 @@ public:
     }
 
     render_type getRenderMode() { return _shaderMode; }
+
+    bool isClipPlaneEnabled() { return gl_clip_plane; }
 };
 
 #endif
