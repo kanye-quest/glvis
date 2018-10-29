@@ -28,8 +28,8 @@ extern int visualize;
 struct SdlWindow::_SdlHandle {
     SDL_Window * hwnd;
     SDL_GLContext gl_ctx;
-    _SdlHandle(SDL_Window * window)
-        : hwnd(window)
+    _SdlHandle()
+        : hwnd(nullptr)
         , gl_ctx(0) { }
 
     ~_SdlHandle() {
@@ -43,20 +43,25 @@ bool SdlWindow::isGlInitialized() {
     return (_handle->gl_ctx != 0);
 }
 
-SdlWindow::SdlWindow(const char * title, int w, int h)
+SdlWindow::SdlWindow()
     : onIdle(nullptr)
     , onExpose(nullptr)
     , onReshape(nullptr)
     , ctrlDown(false)
     , requiresExpose(false)
     , takeScreenshot(false) {
+}
 
+bool SdlWindow::createWindow(const char * title, int w, int h) {
     if (!SDL_WasInit(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
         if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) != 0) {
             cerr << "Failed to initialize SDL: " << SDL_GetError() << endl;
-            return;
+            return false;
         }
     }
+
+    //destroy any existing SDL window
+    _handle.reset(new _SdlHandle);
 
 #ifndef __EMSCRIPTEN__
     // on OSX systems, only core profiles are available for OpenGL 3+, which
@@ -76,25 +81,13 @@ SdlWindow::SdlWindow(const char * title, int w, int h)
         SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, GetMultisample());
     }
 
-    _handle = std::make_shared<_SdlHandle>(SDL_CreateWindow(title,
-                                                SDL_WINDOWPOS_UNDEFINED,
-                                                SDL_WINDOWPOS_UNDEFINED,
-                                                w,
-                                                h,
-                                                SDL_WINDOW_OPENGL));
-    SDL_SetWindowResizable(_handle->hwnd, SDL_TRUE);
-}
-
-bool SdlWindow::createGlContext() {
-    if (!_handle) {
-        cerr << "Can't initialize an OpenGL context without a valid window" << endl;
-        return false;
-    }
-    if (_handle->gl_ctx) {
-        // destroy existing opengl context
-        SDL_GL_DeleteContext(_handle->gl_ctx);
-        _handle->gl_ctx = 0;
-    }
+    _handle->hwnd = SDL_CreateWindow(title,
+                                     SDL_WINDOWPOS_UNDEFINED,
+                                     SDL_WINDOWPOS_UNDEFINED,
+                                     w,
+                                     h,
+                                     SDL_WINDOW_OPENGL |
+                                     SDL_WINDOW_RESIZABLE);
 
     SDL_GLContext context = SDL_GL_CreateContext(_handle->hwnd);
     if (!context) {

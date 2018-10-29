@@ -75,14 +75,8 @@ int InitVisualization (const char name[], int x, int y, int w, int h)
    cout << "OpenGL Visualization" << endl;
 #endif
    if (!wnd) {
-       wnd = new SdlWindow(name, w, h);
-       // GLenum mode = AUX_DOUBLE | AUX_RGBA | AUX_DEPTH;
-       // mode |= (AUX_ALPHA | AUX_ACCUM);
-       if (!wnd->isWindowInitialized()) {
-          return 1;
-       }
-       wnd->createGlContext();
-       if (!wnd->isGlInitialized()) {
+       wnd = new SdlWindow();
+       if (!wnd->createWindow(name, w, h)) {
            return 1;
        }
 

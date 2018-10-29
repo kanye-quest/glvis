@@ -32,8 +32,7 @@ class SdlWindow
 {
 private:
     struct _SdlHandle;
-    //Use shared_ptr to manage handle lifetimes
-    std::shared_ptr<_SdlHandle> _handle;
+    std::unique_ptr<_SdlHandle> _handle;
 
     bool running;
     
@@ -58,14 +57,14 @@ private:
     bool keyEvent(SDL_Keysym& ks);
     bool keyEvent(char c);
 public:
-    SdlWindow(const char * title, int w, int h);
+    SdlWindow();
     ~SdlWindow();
 
     /**
-     * Creates a new OpenGL context with the window.
-     * Returns false if OpenGL or GLEW intialization fails.
+     * Creates a new OpenGL window.
+     * Returns false if SDL or OpenGL intialization fails.
      */
-    bool createGlContext();
+    bool createWindow(const char * title, int w, int h);
     /**
      * Runs the window loop.
      */
