@@ -31,7 +31,7 @@ protected:
    int drawmesh, drawelems, drawnums;
    int drawbdr, draw_cp;
 
-   gl3::GlDrawable disp_buf[3];
+   gl3::GlDrawable disp_buf;
 
    gl3::GlDrawable e_nums_buf;
    gl3::GlDrawable v_nums_buf;

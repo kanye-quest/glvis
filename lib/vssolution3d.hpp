@@ -25,8 +25,7 @@ protected:
    int cplane;
    int cp_drawmesh, cp_drawelems, drawlsurf;
 
-   //Our VBO indices + sizes
-   gl3::GlDrawable disp_buf[3];
+   gl3::GlDrawable disp_buf;
    gl3::GlDrawable line_buf;
    gl3::GlDrawable cplane_buf;
    gl3::GlDrawable cplines_buf;

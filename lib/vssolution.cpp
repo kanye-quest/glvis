@@ -1196,8 +1196,8 @@ void DrawPatch(gl3::GlDrawable& drawable, const DenseMatrix &pts, Vector &vals, 
 
 void VisualizationSceneSolution::PrepareWithNormals()
 {
-   disp_buf[1].clear();
-   gl3::GlBuilder poly = disp_buf[1].createBuilder();
+   disp_buf.clear();
+   gl3::GlBuilder poly = disp_buf.createBuilder();
    Array<int> vertices;
    double *vtx, *nor, val, s;
 
@@ -1236,13 +1236,13 @@ void VisualizationSceneSolution::PrepareWithNormals()
       }
       poly.glEnd();
    }
-   disp_buf[1].buffer();
+   disp_buf.buffer();
 }
 
 void VisualizationSceneSolution::PrepareFlat()
 {
    int i, j;
-   disp_buf[0].clear();
+   disp_buf.clear();
    int ne = mesh -> GetNE();
    DenseMatrix pointmat;
    Array<int> vertices;
@@ -1263,14 +1263,14 @@ void VisualizationSceneSolution::PrepareFlat()
       }
       if (j == 3)
       {
-         DrawTriangle(disp_buf[0], pts, col, minv, maxv);
+         DrawTriangle(disp_buf, pts, col, minv, maxv);
       }
       else
       {
-         DrawQuad(disp_buf[0], pts, col, minv, maxv);
+         DrawQuad(disp_buf, pts, col, minv, maxv);
       }
    }
-   disp_buf[0].buffer();
+   disp_buf.buffer();
 }
 
 // determines how quads and their level lines are drawn
@@ -1283,7 +1283,7 @@ const int split_quads = 1;
 void VisualizationSceneSolution::PrepareFlat2()
 {
    int i, j, k;
-   disp_buf[2].clear();
+   disp_buf.clear();
    int ne = mesh -> GetNE();
    DenseMatrix pointmat, pts3d, normals;
    Vector values;
@@ -1311,7 +1311,7 @@ void VisualizationSceneSolution::PrepareFlat2()
       }
       j = (j != 0) ? 2 : 0;
       RemoveFPErrors(pts3d, values, normals, sides, RG, fRG);
-      DrawPatch(disp_buf[2], pts3d, values, normals, sides, fRG, minv, maxv, j);
+      DrawPatch(disp_buf, pts3d, values, normals, sides, fRG, minv, maxv, j);
 #else
       for (k = 0; k < RG.Size()/sides; k++)
       {
@@ -1379,7 +1379,7 @@ void VisualizationSceneSolution::PrepareFlat2()
       }
 #endif
    }
-   disp_buf[2].buffer();
+   disp_buf.buffer();
 }
 
 void VisualizationSceneSolution::Prepare()
@@ -1405,8 +1405,8 @@ void VisualizationSceneSolution::Prepare()
 
    int i, j;
 
-   disp_buf[1].clear();
-   gl3::GlBuilder poly = disp_buf[1].createBuilder();
+   disp_buf.clear();
+   gl3::GlBuilder poly = disp_buf.createBuilder();
    int ne = mesh -> GetNE();
    int nv = mesh -> GetNV();
    DenseMatrix pointmat;
@@ -1487,7 +1487,7 @@ void VisualizationSceneSolution::Prepare()
          }
       }
    }
-   disp_buf[1].buffer();
+   disp_buf.buffer();
 }
 
 void VisualizationSceneSolution::PrepareLevelCurves()
@@ -2228,7 +2228,7 @@ void VisualizationSceneSolution::Draw()
    // draw elements
    if (drawelems)
    {
-      disp_buf[shading].draw();
+      disp_buf.draw();
    }
 
    if (MatAlpha < 1.0)
