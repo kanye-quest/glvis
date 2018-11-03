@@ -227,22 +227,14 @@ public:
 
     void enableClipPlane() {
         if (!gl_clip_plane) {
-#ifdef __EMSCRIPTEN__
             glUniform1i(locUseClipPlane, GL_TRUE); 
-#else
-            glEnable(GL_CLIP_DISTANCE0);
-#endif
             gl_clip_plane = true;
         }
     }
 
     void disableClipPlane() {
         if (gl_clip_plane) {
-#ifdef __EMSCRIPTEN__
             glUniform1i(locUseClipPlane, GL_FALSE);
-#else
-            glDisable(GL_CLIP_DISTANCE0);
-#endif
             gl_clip_plane = false;
         }
     }

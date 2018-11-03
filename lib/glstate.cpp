@@ -1,5 +1,6 @@
 #include "glstate.hpp"
 #include <string>
+#include <regex>
 #include <iostream>
 
 using std::cerr;
@@ -8,7 +9,7 @@ using std::endl;
 #ifdef __EMSCRIPTEN__
 const std::string _glsl_add = "precision mediump float;\n";
 #else
-const std::string _glsl_add = "#version 130\n";
+const std::string _glsl_add = "#version GLSL_VER\n";
 #endif
 
 enum ShaderFile {
@@ -41,13 +42,27 @@ const std::string shader_files[] = {
 #include "shaders/printing.frag"
 };
 
-void initShaderState();
-
-GLuint compileShaderFile(GLenum shaderType, const std::string& shaderText) {
+GLuint compileShaderFile(GLenum shaderType, const std::string& shaderText, int glslVersion) {
     GLuint shader = glCreateShader(shaderType);
     GLint success = 0;
-    int shader_len = shaderText.length();
-    const char * shader_cstr = shaderText.c_str();
+    std::string fmt_shader = shaderText;
+    if (glslVersion >= 130) {
+        if (shaderType == GL_VERTEX_SHADER) {
+            fmt_shader = std::regex_replace(fmt_shader, std::regex("attribute"), "in");
+            fmt_shader = std::regex_replace(fmt_shader, std::regex("varying"), "out");
+        } else { // FRAGMENT_SHADER
+            fmt_shader = std::regex_replace(fmt_shader, std::regex("varying"), "in");
+            if (glslVersion >= 140) {
+                fmt_shader = "layout(location = 0) out vec4 fragColor;\n" + fmt_shader;
+                fmt_shader = std::regex_replace(fmt_shader, std::regex("gl_FragColor"), "fragColor");
+            }
+        }
+        fmt_shader = std::regex_replace(fmt_shader, std::regex("texture2D"), "texture");
+    }
+    fmt_shader = _glsl_add + fmt_shader;
+    fmt_shader = std::regex_replace(fmt_shader, std::regex("GLSL_VER"), std::to_string(glslVersion));
+    int shader_len = fmt_shader.length();
+    const char * shader_cstr = fmt_shader.c_str();
     glShaderSource(shader, 1, &shader_cstr, &shader_len);
     glCompileShader(shader);
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
@@ -90,10 +105,23 @@ bool linkShaders(GLuint prgm, const GLuint (&shaders)[Count]) {
 
 bool GlState::compileShaders() {
     GLuint refshaders[NUM_SHADERS];
+    int glsl_ver = 110;
+    if (GLEW_VERSION_3_0) {
+        //GLSL 1.30-1.50, 3.30+
+        int ver_major, ver_minor;
+        glGetIntegerv(GL_MAJOR_VERSION, &ver_major);
+        glGetIntegerv(GL_MINOR_VERSION, &ver_minor);
+        glsl_ver = ver_major * 100 + ver_minor * 10;
+        if (glsl_ver < 330) {
+            // OpenGL 3.2 -> GLSL 1.50
+            // OpenGL 3.1 -> GLSL 1.40
+            glsl_ver -= 170;
+        }
+    }
     for (int i = 0; i < NUM_SHADERS; i++) {
         GLenum shader_type = (i % 2 == 0) ? GL_VERTEX_SHADER
                                           : GL_FRAGMENT_SHADER;
-        refshaders[i] = compileShaderFile(shader_type, _glsl_add + shader_files[i]);
+        refshaders[i] = compileShaderFile(shader_type, shader_files[i], glsl_ver);
         if (refshaders[i] == 0)
             return false;
     }
@@ -111,29 +139,33 @@ bool GlState::compileShaders() {
         return false;
     }
     //TODO: enable a legacy path for opengl2.1 without ext_tranform_feedback?
-    feedback_program = glCreateProgram();
-    const char * xfrm_varyings[] = {
-        "gl_Position",
-        "fColor",
-        "fClipCoord",
-    };
-    glTransformFeedbackVaryings(feedback_program, 3, xfrm_varyings,
-                                GL_INTERLEAVED_ATTRIBS);
-    GLuint print_pipeline[] = {
-        refshaders[VS_LIGHTING],
-        refshaders[VS_PRINTING],
-        refshaders[FS_PRINTING]
-    };
-    if (!linkShaders(feedback_program, print_pipeline)) {
-        glDeleteProgram(feedback_program);
-        feedback_program = 0;
+    if (GLEW_EXT_transform_feedback || GLEW_VERSION_3_0) {
+        feedback_program = glCreateProgram();
+        const char * xfrm_varyings[] = {
+            "gl_Position",
+            "fColor",
+            "fClipCoord",
+        };
+        glTransformFeedbackVaryings(feedback_program, 3, xfrm_varyings,
+                                    GL_INTERLEAVED_ATTRIBS);
+        GLuint print_pipeline[] = {
+            refshaders[VS_LIGHTING],
+            refshaders[VS_PRINTING],
+            refshaders[FS_PRINTING]
+        };
+        if (!linkShaders(feedback_program, print_pipeline)) {
+            glDeleteProgram(feedback_program);
+            feedback_program = 0;
+        }
     }
     glUseProgram(default_program);
     initShaderState(default_program);
-    if (global_vao == 0) {
-        glGenVertexArrays(1, &global_vao);
+    if (GLEW_VERSION_3_0) {
+        if (global_vao == 0) {
+            glGenVertexArrays(1, &global_vao);
+        }
+        glBindVertexArray(global_vao);
     }
-    glBindVertexArray(global_vao);
     return true;
 }
 
@@ -193,9 +225,7 @@ void GlState::initShaderState(GLuint program) {
         glUniform4fv(locSpecular[i], 1, _pt_lights[i].specular);
     }
     // Set clip plane uniforms
-#ifdef __EMSCRIPTEN__
     glUniform1i(locUseClipPlane, gl_clip_plane);
-#endif
     glUniform4fv(locClipPlane, 1, glm::value_ptr(_clip_plane));
     // Set transform matrix uniforms
     loadMatrixUniforms(true);

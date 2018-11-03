@@ -66,9 +66,9 @@ bool SdlWindow::createWindow(const char * title, int w, int h) {
 #ifndef __EMSCRIPTEN__
     // on OSX systems, only core profiles are available for OpenGL 3+, which
     // removes the fixed-function pipeline
-    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 0);
-    SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1);
+    //SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 #endif
     // technically, SDL already defaults to double buffering and a depth buffer
     // all we need is an alpha channel
@@ -87,6 +87,7 @@ bool SdlWindow::createWindow(const char * title, int w, int h) {
                                      w,
                                      h,
                                      SDL_WINDOW_OPENGL |
+                                     SDL_WINDOW_ALLOW_HIGHDPI |
                                      SDL_WINDOW_RESIZABLE);
 
     SDL_GLContext context = SDL_GL_CreateContext(_handle->hwnd);
@@ -105,6 +106,14 @@ bool SdlWindow::createWindow(const char * title, int w, int h) {
     if (err != GLEW_OK) {
         cerr << "Failed to initialize GLEW: " << glewGetErrorString(err) << endl;
         return false;
+    }
+    if (!GLEW_VERSION_3_0) {
+        if (GLEW_EXT_transform_feedback) {
+            glBindBufferBase            = glBindBufferBaseEXT;
+            glTransformFeedbackVaryings = glTransformFeedbackVaryingsEXT;
+            glBeginTransformFeedback    = glBeginTransformFeedbackEXT;
+            glEndTransformFeedback      = glEndTransformFeedbackEXT;
+        }
     }
     cerr << glGetString(GL_VERSION) << "\n";
     return true;
@@ -284,7 +293,7 @@ void SdlWindow::getWindowSize(int& w, int& h) {
         int is_fullscreen;
         emscripten_get_canvas_size(&w, &h, &is_fullscreen);
 #else
-        SDL_GetWindowSize(_handle->hwnd, &w, &h);
+        SDL_GL_GetDrawableSize(_handle->hwnd, &w, &h);
 #endif
     }
 }

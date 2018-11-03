@@ -61,48 +61,35 @@ public:
         return *this;
     }
 
-    void preDraw(GLenum shape, const IVertexBuffer * d) {
+    void preDraw(const IVertexBuffer * d) {
         // Allocate buffer and setup feedback
         int buf_size = d->count() * sizeof(FeedbackVertex);
         glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, _feedback_buf);
         glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER,
                      buf_size, nullptr, GL_STATIC_READ);
         glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, _feedback_buf);
-
         // Draw objects while capturing vertices
         glEnable(GL_RASTERIZER_DISCARD);
-        glBeginTransformFeedback(shape);
+        glBeginTransformFeedback(d->get_shape());
     }
 
-    void postDraw(GLenum shape, const IVertexBuffer * d) {
+    void postDraw(const IVertexBuffer * d) {
         int buf_size = d->count() * sizeof(FeedbackVertex);
         glEndTransformFeedback();
         glDisable(GL_RASTERIZER_DISCARD);
         // Read buffer
         FeedbackVertex * fb_buf = nullptr;
-#ifdef __EMSCRIPTEN__
         fb_buf = new FeedbackVertex[d->count()];
         glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER,
                            0, buf_size, fb_buf);
-#else
-        glMapBufferRange(GL_TRANSFORM_FEEDBACK_BUFFER, 0, buf_size,
-                         GL_MAP_READ_BIT);
-        glGetBufferPointerv(GL_TRANSFORM_FEEDBACK_BUFFER,
-                            GL_BUFFER_MAP_POINTER,
-                            (GLvoid**)(&fb_buf));
-#endif
-        if (shape == GL_TRIANGLES) {
+        if (d->get_shape() == GL_TRIANGLES) {
             processTriangleTransformFeedback(fb_buf, d->count());
-        } else if (shape == GL_LINES) {
+        } else if (d->get_shape() == GL_LINES) {
             processLineTransformFeedback(fb_buf, d->count());
         } else { //shape == GL_POINTS/other?
             std::cerr << "Warning: Unhandled primitive type during transform feedback parsing.";
         }
-        // Cleanup
-#ifdef __EMSCRIPTEN__
         delete [] fb_buf;
-#endif
-        glUnmapBuffer(GL_TRANSFORM_FEEDBACK_BUFFER);
     }
 
     void preDraw(const TextBuffer& t) {

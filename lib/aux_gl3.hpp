@@ -13,7 +13,6 @@
 #define GLVIS_AUX_GL3
 #include <vector>
 #include <array>
-#include <unordered_map>
 #include <iostream>
 #include <memory>
 
@@ -267,23 +266,26 @@ public:
     virtual ~IVertexBuffer() { }
     virtual void clear() = 0;
     virtual void buffer() = 0;
-    virtual void draw(GLenum shape) = 0;
+    virtual void draw() = 0;
 
     virtual size_t count() const = 0;
+    virtual GLenum get_shape() const = 0;
 };
 
 template<typename T>
 class VertexBuffer : public IVertexBuffer
 {
 private:
+    GLenum _shape;
     std::vector<T> _data;
     std::unique_ptr<GLuint> _handle;
     size_t _buffered_size;
     size_t _allocated_size;
 
 public:
-    VertexBuffer()
-        : _handle(new GLuint)
+    VertexBuffer(GLenum shape)
+        : _shape(shape)
+        , _handle(new GLuint)
         , _buffered_size(0)
         , _allocated_size(0) {
         glGenBuffers(1, _handle.get());
@@ -301,6 +303,11 @@ public:
      * Returns the number of vertices buffered on the GPU.
      */
     virtual size_t count() const { return _buffered_size; }
+
+    /**
+     * Gets the primitive type contained by the vertex buffer.
+     */
+    virtual GLenum get_shape() const { return _shape; }
 
     /**
      * Clears the buffer of all data.
@@ -330,13 +337,13 @@ public:
     /**
      * Draws the vertex data buffered on the GPU.
      */
-    virtual void draw(GLenum shape) {
+    virtual void draw() {
         if (_buffered_size == 0) {
             return;
         }
         glBindBuffer(GL_ARRAY_BUFFER, *_handle);
         T::setupAttribLayout();
-        glDrawArrays(shape, 0, _buffered_size);
+        glDrawArrays(_shape, 0, _buffered_size);
         T::clearAttribLayout();
     }
 
@@ -417,8 +424,8 @@ public:
 
 class IDrawHook {
 public:
-    virtual void preDraw(GLenum, const IVertexBuffer *) = 0;
-    virtual void postDraw(GLenum, const IVertexBuffer *) = 0;
+    virtual void preDraw(const IVertexBuffer *) = 0;
+    virtual void postDraw(const IVertexBuffer *) = 0;
 
     virtual void preDraw(const TextBuffer&) = 0;
     virtual void postDraw(const TextBuffer&) = 0;
@@ -428,19 +435,26 @@ class GlDrawable
 {
 private:
     static IDrawHook * buf_hook;
-    std::unordered_map<GLenum, std::unique_ptr<IVertexBuffer>> buffers[NUM_LAYOUTS];
+    const static size_t NUM_SHAPES = 2;
+    std::unique_ptr<IVertexBuffer> buffers[NUM_LAYOUTS][NUM_SHAPES];
     TextBuffer text_buffer;
 
     friend class GlBuilder;
 
     template<typename Vert>
     VertexBuffer<Vert> * getBuffer(GLenum shape) {
-        auto loc = buffers[Vert::layout].find(shape);
-        if (loc == buffers[Vert::layout].end()) {
-            std::unique_ptr<IVertexBuffer> new_buf(new VertexBuffer<Vert>);
-            loc = buffers[Vert::layout].emplace(shape, std::move(new_buf)).first;
+        int idx = -1;
+        if (shape == GL_LINES) {
+            idx = 0;
+        } else if (shape == GL_TRIANGLES) {
+            idx = 1;
+        } else {
+            return nullptr;
         }
-        VertexBuffer<Vert> * buf = static_cast<VertexBuffer<Vert>*>(loc->second.get());
+        if (!buffers[Vert::layout][idx]) {
+            buffers[Vert::layout][idx].reset(new VertexBuffer<Vert>(shape));
+        }
+        VertexBuffer<Vert> * buf = static_cast<VertexBuffer<Vert>*>(buffers[Vert::layout][idx].get());
         return buf;
     }
 public:
@@ -493,8 +507,10 @@ public:
      */
     void clear() {
         for (int i = 0; i < NUM_LAYOUTS; i++) {
-            for (auto& pair : buffers[i]) {
-                pair.second->clear();
+            for (int j = 0; j < NUM_SHAPES; j++) {
+                if (buffers[i][j]) {
+                    buffers[i][j]->clear();
+                }
             }
         }
         text_buffer.clear();
@@ -505,8 +521,10 @@ public:
      */
     void buffer() {
         for (int i = 0; i < NUM_LAYOUTS; i++) {
-            for (auto& pair : buffers[i]) {
-                pair.second->buffer();
+            for (int j = 0; j < NUM_SHAPES; j++) {
+                if (buffers[i][j]) {
+                    buffers[i][j]->buffer();
+                }
             }
         }
         text_buffer.buffer();
@@ -517,13 +535,15 @@ public:
      */
     void draw() {
         for (int i = 0; i < NUM_LAYOUTS; i++) {
-            for (auto& pair : buffers[i]) {
+            for (int j = 0; j < NUM_SHAPES; j++) {
+                if (!buffers[i][j])
+                    continue;
                 if (GlDrawable::buf_hook) {
-                    GlDrawable::buf_hook->preDraw(pair.first, pair.second.get());
+                    GlDrawable::buf_hook->preDraw(buffers[i][j].get());
                 }
-                pair.second->draw(pair.first);
+                buffers[i][j]->draw();
                 if (GlDrawable::buf_hook) {
-                    GlDrawable::buf_hook->postDraw(pair.first, pair.second.get());
+                    GlDrawable::buf_hook->postDraw(buffers[i][j].get());
                 }
             }
         }

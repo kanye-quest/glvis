@@ -1,4 +1,3 @@
-#ifdef __EMSCRIPTEN__
 R"(
 uniform bool useClipPlane;
 varying float fClipVal;
@@ -9,9 +8,3 @@ void fragmentClipPlane() {
     }
 }
 )"
-#else
-R"(
-void fragmentClipPlane() {
-}
-)"
-#endif
