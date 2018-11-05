@@ -63,13 +63,6 @@ bool SdlWindow::createWindow(const char * title, int w, int h) {
     //destroy any existing SDL window
     _handle.reset(new _SdlHandle);
 
-#ifndef __EMSCRIPTEN__
-    // on OSX systems, only core profiles are available for OpenGL 3+, which
-    // removes the fixed-function pipeline
-    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 1);
-    //SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-#endif
     // technically, SDL already defaults to double buffering and a depth buffer
     // all we need is an alpha channel
 
@@ -107,6 +100,14 @@ bool SdlWindow::createWindow(const char * title, int w, int h) {
         cerr << "Failed to initialize GLEW: " << glewGetErrorString(err) << endl;
         return false;
     }
+    cerr << glGetString(GL_VERSION) << "\n";
+
+    if (!GLEW_ARB_vertex_shader ||
+        !GLEW_ARB_fragment_shader ||
+        !GLEW_ARB_shading_language_100) {
+        cerr << "Shader support missing, failed to launch." << endl;
+    }
+
     if (!GLEW_VERSION_3_0) {
         if (GLEW_EXT_transform_feedback) {
             glBindBufferBase            = glBindBufferBaseEXT;
@@ -115,7 +116,6 @@ bool SdlWindow::createWindow(const char * title, int w, int h) {
             glEndTransformFeedback      = glEndTransformFeedbackEXT;
         }
     }
-    cerr << glGetString(GL_VERSION) << "\n";
     return true;
 }
 

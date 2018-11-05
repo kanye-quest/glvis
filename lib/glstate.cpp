@@ -105,7 +105,8 @@ bool linkShaders(GLuint prgm, const GLuint (&shaders)[Count]) {
 
 bool GlState::compileShaders() {
     GLuint refshaders[NUM_SHADERS];
-    int glsl_ver = 110;
+    int glsl_ver = 100;
+#ifndef __EMSCRIPTEN__
     if (GLEW_VERSION_3_0) {
         //GLSL 1.30-1.50, 3.30+
         int ver_major, ver_minor;
@@ -117,7 +118,10 @@ bool GlState::compileShaders() {
             // OpenGL 3.1 -> GLSL 1.40
             glsl_ver -= 170;
         }
+    } else if (GLEW_VERSION_2_0) {
+        glsl_ver = 110;
     }
+#endif
     for (int i = 0; i < NUM_SHADERS; i++) {
         GLenum shader_type = (i % 2 == 0) ? GL_VERTEX_SHADER
                                           : GL_FRAGMENT_SHADER;
